@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="https://www.wolfsoftwares.com/favicon.svg" type="image/svg+xml">
+<title>Apex Dental · Online scheduling demo by Wolf Softwares</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Text:wght@400;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: white, single light theme. App bar with two views (patient booking / front desk) + a customize drawer. Clinic brand color is a live token. */
+:root{
+  --brand:#0F2140; --brand-ink:#FFFFFF; --gold:#B08743; --gold-soft:#D4B373;
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F6F8F8; --ink:#14201F; --muted:#5E6B6C; --faint:#94A0A1; --line:#E6EBEB; color-scheme:light;
+  --ok:#15803D; --ok-bg:#E8F6EE; --warn:#B45309; --warn-bg:#FDF3E3; --bad:#B91C1C; --bad-bg:#FDECEC; --info:#1D4ED8; --info-bg:#EAF0FE;
+  --shadow:0 1px 2px rgba(16,32,34,.06),0 8px 24px rgba(16,32,34,.06);
+  --f-display:"Libre Caslon Text",Georgia,"Times New Roman",serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --tint:color-mix(in srgb,var(--brand) 7%,#FFFFFF);
+  --tint-2:color-mix(in srgb,var(--brand) 13%,#FFFFFF);
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;line-height:1.2;text-wrap:balance;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.tnum{font-variant-numeric:tabular-nums}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* demo ribbon + app bar */
+.ribbon{background:var(--ink);color:var(--bg);font-size:12.5px}
+.ribbon .wrap{display:flex;gap:12px;align-items:center;justify-content:space-between;padding-block:6px;flex-wrap:wrap}
+.ribbon b{font-weight:600}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(255,255,255,.94);backdrop-filter:saturate(1.4) blur(8px);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+.bar .wrap{display:flex;align-items:center;gap:16px;padding-block:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;margin-right:auto}
+.logo{width:38px;height:38px;border-radius:10px;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;flex:none;overflow:hidden}
+.logo img{width:100%;height:100%;object-fit:contain;background:var(--surface)}
+.brand-name{font-family:var(--f-display);font-weight:700;font-size:17px;line-height:1.15}
+.brand-sub{font-size:12.5px;color:var(--muted)}
+.demo-pill{vertical-align:2px;font-family:var(--f-body)}
+.tabs{display:flex;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px}
+.tab{border:0;background:none;padding:7px 16px;border-radius:999px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--brand);color:var(--brand-ink)}
+.icon-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-weight:600;font-size:14px}
+.icon-btn:hover{border-color:var(--brand)}
+.icon-btn svg{width:18px;height:18px}
+
+/* generic */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 18px;font-weight:700;font-family:var(--f-body);background:var(--brand);color:var(--brand-ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:7px 12px;border-radius:9px;font-size:13.5px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.info{background:var(--info-bg);color:var(--info)} .pill.mute{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)} .pill.brand{background:var(--tint-2);color:var(--ink)}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600}
+main{padding-block:24px 64px}
+[hidden]{display:none!important}
+
+/* ---------- PATIENT BOOKING ---------- */
+.book-col{max-width:600px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.stage>*{min-width:0}
+.bk-tools{display:flex;align-items:center;gap:14px;justify-content:space-between}
+.hint{margin:0;font-size:13.5px;color:var(--muted);min-width:0}
+.hint b{color:var(--ink);font-weight:600}
+.seg.mini{flex:none;padding:2px}.seg.mini button{padding:6px 10px;display:grid;place-items:center}.seg.mini svg{width:18px;height:18px}
+.when-line{margin:-4px 0 14px}
+.done{text-align:center;padding:8px 0 18px}.done .done-ic{margin:0 auto 12px}.done h2{font-size:22px}.done .note{margin-top:4px}
+.done-when{font-family:var(--f-display);font-weight:700;font-size:18px;margin:10px 0 0}
+.stage{display:flex;justify-content:center}
+.bk{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.bk-head{padding:20px 22px 14px;border-bottom:1px solid var(--line)}
+.bk-head h1{font-size:22px}
+.bk-head p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.steps{display:flex;gap:6px;margin-top:14px}
+.steps span{flex:1;height:4px;border-radius:4px;background:var(--line)}
+.steps span.on{background:var(--brand)}
+.bk-body{padding:18px 22px 22px}
+.bk-q{font-family:var(--f-display);font-weight:700;font-size:16px;margin:0 0 12px}
+.back{border:0;background:none;color:var(--muted);font-weight:600;padding:0;margin-bottom:10px;display:inline-flex;gap:6px;align-items:center}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:14px;align-items:center;text-align:left;width:100%;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 14px;transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--brand);background:var(--tint)}
+.opt .ic{width:40px;height:40px;border-radius:50%;background:var(--tint);display:grid;place-items:center;flex:none;color:var(--brand)}
+.opt .ic svg{width:22px;height:22px}
+.opt b{display:block;font-family:var(--f-body);font-weight:700;font-size:15px}
+.opt small{display:block;color:var(--muted);font-size:13px}
+.opt .meta{margin-left:auto;text-align:right;flex:none;font-size:12.5px;color:var(--muted)}
+.av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-family:var(--f-body);color:var(--brand-ink);background:var(--brand);flex:none}
+.av.alt{background:color-mix(in srgb,var(--brand) 55%,#334155)} .av.alt2{background:color-mix(in srgb,var(--brand) 40%,#7C3AED)}
+.dates{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin;margin-bottom:14px}
+.date{flex:none;width:64px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 0;text-align:center}
+.date small{display:block;font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.date b{display:block;font-family:var(--f-body);font-size:19px}
+.date i{display:block;font-style:normal;font-size:11px;color:var(--faint)}
+.date[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.date[aria-pressed="true"] small,.date[aria-pressed="true"] i{color:inherit;opacity:.85}
+.date:disabled{opacity:.4}
+.slot-group{margin-bottom:14px}
+.slot-group .label{margin-bottom:8px}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.slot{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 0;font-weight:600;font-variant-numeric:tabular-nums}
+.slot:hover{border-color:var(--brand)}
+.slot[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.empty{padding:18px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form .full{grid-column:1/-1}
+@media (max-width:520px){.form{grid-template-columns:1fr}}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px}
+.field textarea{min-height:70px;resize:vertical}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;padding:3px;background:var(--surface-2)}
+.seg button{flex:1;border:0;background:none;padding:8px;border-radius:9px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;color:var(--muted)}
+.check input{margin-top:3px;accent-color:var(--brand)}
+.summary{display:grid;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px;font-size:14px}
+.summary div{display:flex;justify-content:space-between;gap:12px}
+.summary span{color:var(--muted)}
+.summary b{text-align:right}
+.actions{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap}
+.fill{border:0;background:none;color:var(--brand);font-weight:700;padding:0}
+.done-ic{width:58px;height:58px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center;margin-bottom:12px}
+.done-ic svg{width:30px;height:30px}
+.msgs{display:grid;gap:12px;margin-top:16px}
+.sms{background:var(--surface-2);border-radius:16px;padding:12px 14px}
+.sms .from{font-size:12px;color:var(--faint);margin-bottom:6px}
+.bubble{background:color-mix(in srgb,var(--muted) 14%,var(--surface));border-radius:16px 16px 16px 4px;padding:10px 13px;font-size:14px;max-width:420px}
+.email{border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:14px}
+.email-top{background:var(--brand);color:var(--brand-ink);padding:10px 14px;font-weight:700;font-family:var(--f-display)}
+.email-b{padding:12px 14px;background:var(--surface)}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+/* phone frame */
+.phone{width:390px;max-width:100%;border:10px solid #0d1416;border-radius:46px;box-shadow:0 30px 60px rgba(0,0,0,.25);overflow:hidden;position:relative;background:var(--surface)}
+.phone::before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:110px;height:28px;border-radius:20px;background:#0d1416;z-index:2}
+.phone .bk{border:0;border-radius:0;box-shadow:none;max-width:none;max-height:760px;overflow-y:auto}
+.phone .bk-head{padding-top:46px}
+.phone .form{grid-template-columns:1fr}
+/* how it works side panel */
+.how{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;position:sticky;top:90px}
+.how h2{font-size:16px;margin-bottom:4px}
+.how p{color:var(--muted);font-size:14px;margin:0 0 12px}
+.how ul{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.how li{display:flex;gap:10px;font-size:14px}
+.how li svg{width:18px;height:18px;flex:none;color:var(--brand);margin-top:2px}
+.how .now{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
+
+/* ---------- FRONT DESK ---------- */
+.fd-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.fd-top h1{font-size:24px;margin-right:auto}
+.daynav{display:flex;align-items:center;gap:6px}
+.daynav b{min-width:170px;text-align:center;font-family:var(--f-display)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+@media (max-width:860px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface-2);border-radius:14px;padding:14px 16px}
+.kpi small{display:block;color:var(--muted);font-size:13px}
+.kpi b{display:block;font-family:var(--f-display);font-size:28px;font-variant-numeric:tabular-nums;line-height:1.2}
+.kpi i{font-style:normal;font-size:12.5px;color:var(--faint)}
+.subtabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+.subtab{border:0;background:none;padding:10px 14px;font-weight:700;font-family:var(--f-display);color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.subtab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brand)}
+.subtab .pill{margin-left:6px}
+.fd-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+@media (max-width:1060px){.fd-grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;min-width:0}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.panel-h h2{font-size:15px}
+.sched-scroll{overflow-x:auto}
+.sched{display:grid;min-width:640px;position:relative}
+.sched-head{display:grid;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:2}
+.sched-head div{padding:10px 12px;display:flex;align-items:center;gap:10px;min-width:0}
+.sched-head .av{width:30px;height:30px;font-size:12px}
+.sched-head b{display:block;font-size:13.5px;font-family:var(--f-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sched-head small{display:block;font-size:12px;color:var(--muted)}
+.sched-body{display:grid;position:relative}
+.tcol{position:relative;border-right:1px solid var(--line)}
+.tcol span{position:absolute;right:8px;font-size:11.5px;color:var(--faint);transform:translateY(-50%);font-variant-numeric:tabular-nums}
+.pcol{position:relative;border-right:1px solid var(--line);background-image:repeating-linear-gradient(to bottom,var(--line) 0 1px,transparent 1px var(--hour))}
+.pcol:last-child{border-right:0}
+.lunch{position:absolute;left:0;right:0;background:repeating-linear-gradient(135deg,var(--surface-2) 0 6px,transparent 6px 12px);color:var(--faint);font-size:11.5px;display:flex;align-items:center;justify-content:center}
+.appt{position:absolute;left:5px;right:5px;border-radius:9px;padding:5px 8px 5px 11px;border:1px solid var(--line);background:var(--surface);text-align:left;overflow:hidden;font-size:12.5px;line-height:1.3;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.appt::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
+.appt b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appt small{display:block;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appt.st-checked-in{background:color-mix(in srgb,var(--ok) 8%,var(--surface))}
+.appt.st-no-show{opacity:.55;text-decoration:line-through}
+.appt.st-completed{opacity:.7}
+.appt.st-unconfirmed{border-style:dashed}
+.appt.fresh{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 30%,transparent);animation:pulse 1.6s ease-in-out 3}
+@keyframes pulse{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--brand) 18%,transparent)}}
+.appt .tags{position:absolute;top:5px;right:6px;display:flex;gap:4px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.nowline{position:absolute;left:0;right:0;height:2px;background:var(--bad);z-index:1}
+.nowline::before{content:"";position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--bad)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.feed{list-style:none;margin:0;padding:6px 0;max-height:640px;overflow:auto}
+.feed li{display:flex;gap:10px;padding:10px 16px;font-size:13.5px}
+.feed li+li{border-top:1px solid var(--line)}
+.feed .fi{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--tint-2);color:var(--brand)}
+.feed .fi svg{width:16px;height:16px}
+.feed time{display:block;font-size:12px;color:var(--faint)}
+.feed li.fresh{background:var(--tint)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:620px}
+th{text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:10px 16px;border-bottom:1px solid var(--line)}
+td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.rem-list{list-style:none;margin:0;padding:0}
+.rem{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:14px;align-items:start;padding:14px 16px;border-bottom:1px solid var(--line)}
+.rem:last-child{border-bottom:0}
+@media (max-width:640px){.rem{grid-template-columns:1fr}}
+.rem .when{font-family:var(--f-display);font-weight:700;font-size:14px}
+.rem .when small{display:block;font-family:var(--f-body);font-weight:500;color:var(--muted);font-size:12.5px}
+.rem p{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+.switch{position:relative;width:42px;height:24px;flex:none}
+.switch input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0}
+.switch span{position:absolute;inset:0;border-radius:24px;background:var(--line);transition:background .15s}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--surface);transition:transform .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.switch input:checked+span{background:var(--brand)}
+.switch input:checked+span::after{transform:translateX(18px)}
+
+/* drawers */
+.scrim{position:fixed;inset:0;background:rgba(5,12,13,.45);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--surface);z-index:41;box-shadow:-20px 0 50px rgba(0,0,0,.2);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer-h{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.drawer-h h2{font-size:18px}
+.drawer-b{padding:18px 20px;overflow:auto;display:grid;gap:14px;align-content:start}
+.drawer-f{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap}
+.swatches{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sw{width:32px;height:32px;border-radius:50%;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink)}
+.note{font-size:13px;color:var(--muted);margin:0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:600;z-index:60;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
+.foot{color:var(--faint);font-size:12.5px;text-align:center;padding-block:10px 28px}
+@media (max-width:640px){.cust-l{display:none}.tabs{order:3;width:100%}.tab{flex:1}.brand-sub{display:none}.daynav b{min-width:0}}
+
+/* ---------- Apex additions ---------- */
+.ribbon{background:var(--brand);color:#F3EBDD;font-size:13px}
+.ribbon .wrap{display:flex;gap:10px;align-items:center;justify-content:center;padding-block:8px;flex-wrap:wrap;text-align:center}
+.ribbon b{color:var(--gold-soft);font-weight:600}
+.ribbon a{color:#fff}
+.logo{background:var(--brand);color:var(--gold-soft)}
+.logo .mono{font-family:var(--f-display);font-weight:700;font-size:19px}
+.steps span.on{background:var(--gold)}
+.opt .ic.gold{background:color-mix(in srgb,var(--gold) 14%,#fff);color:var(--gold)}
+.fee{display:inline-block;font-size:11.5px;font-weight:600;color:#7A5A22;background:#F6EEDD;border-radius:999px;padding:1px 8px;margin-top:3px}
+.pay{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface-2)}
+.pay-row{display:flex;justify-content:space-between;gap:12px;font-size:14.5px;padding:4px 0}
+.pay-row b{font-variant-numeric:tabular-nums}
+.pay-total{border-top:1px solid var(--line);margin-top:8px;padding-top:10px;font-weight:700}
+.card-mock{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px 14px;display:grid;gap:8px}
+.card-mock .cm-line{display:flex;justify-content:space-between;color:var(--muted);font-variant-numeric:tabular-nums;font-size:14px}
+.card-mock .cm-num{color:var(--ink);letter-spacing:.06em}
+.secure{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-top:10px}
+.clinic-sw{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--surface-2)}
+.clinic-sw button{border:0;background:none;padding:6px 14px;border-radius:999px;font-weight:600;color:var(--muted);white-space:nowrap}
+.clinic-sw button[aria-pressed="true"]{background:var(--brand);color:#fff}
+.fd-top{flex-wrap:wrap;gap:12px}
+.apex-logo{height:40px;width:auto;flex:none}
+@media (max-width:640px){.apex-logo{height:30px}}
+</style>
+</head>
+<body>
+
+<div class="ribbon"><div class="wrap"><span><b>Prepared for Apex Dental</b> by Wolf Softwares · a working demo with fictional patients. Nothing is sent, stored or charged.</span></div></div>
+<header class="bar"><div class="wrap">
+  <div class="brand"><svg xmlns="http://www.w3.org/2000/svg" class="apex-logo" viewBox="0 0 880 120" role="img" aria-label="Apex Dental logo"><defs><linearGradient id="_R_in_-b" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#35bdf2"></stop><stop offset="0.5" stop-color="#0f95d6"></stop><stop offset="1" stop-color="#0b6aa8"></stop></linearGradient><linearGradient id="_R_in_-w" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0f8fd2"></stop><stop offset="1" stop-color="#24b2ee"></stop></linearGradient><linearGradient id="_R_in_-g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7f858e"></stop><stop offset="1" stop-color="#9aa0a8"></stop></linearGradient></defs><g transform="translate(-128 0) scale(0.6667)"><g class="logo-mark-g"><path class="logo-mark" d="M306.84 0Q419 -0.49 431 0.05Q443 0.59 455 4.29Q466.99 8 475.8 13.5Q484.6 19 490.41 24.5Q496.21 30 501.61 37.64Q507 45.27 510.54 53.14Q514.08 61 516.14 70.5Q518.2 80 518.22 89.5Q518.24 99 516.23 108.5Q514.22 118 510.61 126.05Q507 134.1 503.01 140.05Q499.01 146 492.09 153Q485.16 160 480.08 163.62Q475 167.24 468.25 170.62Q461.51 174 455.12 176Q448.74 178 440.87 178.94Q433 179.88 386.5 179.87L340 179.86Q334 170.8 308.5 121.03L283 71.26L243.74 147L298.58 148L314.77 179L192 179.6Q198 165.55 240.5 82.81L283 0.06Q358 146.69 359 147.26Q360 147.84 370.89 147.42L381.78 147L306.84 0ZM361 31.87L360.19 33Q362 37.58 390.03 92.29L418.05 147Q432 147.74 437.98 146.87Q443.96 146 451.68 142.5Q459.4 139 465.77 133.5Q472.14 128 477.26 119.5Q482.38 111 483.77 106.5Q485.16 102 485.69 94Q486.23 86 485.61 81.47Q485 76.95 482.11 69.47Q479.22 62 475.31 56.5Q471.4 51 467.7 47.46Q464 43.92 458.3 40.46Q452.6 37 445.8 34.83Q439 32.67 400 32.27L361 31.87Z" fill="url(#_R_in_-b)" fill-rule="evenodd"></path></g></g><g transform="translate(252 4) scale(0.889)"><g transform="translate(-5 -230)"><path d="M553.61 230Q556 229.29 558.6 229.65L561.21 230Q561.34 245 561.67 245.97L562 246.93Q583 247.06 583.76 247.53L584.52 248L584.81 254Q584 254.4 573 254.56L562 254.72Q561.35 256 561.54 274L561.72 292Q565 293.56 574.76 293.78L584.52 294L584.81 300Q583 301.29 573.5 301.26Q564 301.24 561.54 300.62Q559.07 300 556.97 298Q554.87 296 554.17 293Q553.48 290 553.54 260L553.61 230ZM676.4 230L683 229.29Q683.82 231 683.91 260.88L684 290.75L687 293.53L696.61 294Q696.78 300 696.39 300.55L696 301.1Q687 301.27 685 300.88Q683 300.48 681.5 299.58Q680 298.67 678.42 296.34Q676.84 294 676.51 292Q676.19 290 676.29 260L676.4 230ZM71.22 301L61 301.29L59.5 300Q59.5 281 58.75 279.82L58 278.64L18 278.64Q17.25 281 17.12 290.82L17 300.63Q15 301.29 10 301.1L5 300.92Q4.77 244 6.85 240.5Q8.93 237 11.87 235.5Q14.82 234 37.41 233.9Q60 233.81 63.81 235.4Q67.62 237 69.31 239.28Q71 241.56 71.45 244.28Q71.91 247 71.91 273.5Q71.91 300 71.56 300.5L71.22 301ZM315.93 234Q372 233.79 373.5 234.04Q375 234.29 377.22 235.65Q379.45 237 380.8 239Q382.16 241 382.37 242.5Q382.57 244 382.58 267Q382.6 290 382.37 292Q382.15 294 380.36 296.5Q378.58 299 377.29 299.73Q376 300.45 373.5 300.88Q371 301.31 343.49 301.16L315.98 301Q315.35 300 315.35 267.5Q315.35 235 315.64 234.5L315.93 234ZM323 243.96Q322.77 246 322.78 268Q322.78 290 323.18 291Q323.58 292 324.29 292.65Q325 293.3 326 293.45Q327 293.59 349 293.59Q371 293.59 372.5 293.07L374 292.55Q375.18 289 375.18 267.5Q375.18 246 374.59 244.39L374 242.78Q370 241.71 348 241.79Q326 241.88 324.5 242.92L323 243.96ZM18 246.46Q17.25 249 17.25 257Q17.25 265 17.62 265.54L18 266.09Q58 266.1 58.75 265.55L59.5 265L59 246.82L18 246.46ZM105.2 302L104.81 322L104 322.72Q94 322.69 93.36 322.34L92.73 322Q92.72 249 92.86 248.39L93 247.79Q94.75 247 114.88 247Q135 247 137 247.31Q139 247.62 141.62 249.31Q144.24 251 145.33 252.5Q146.42 254 147.02 256Q147.62 258 147.63 274Q147.64 290 146.82 292.67Q146 295.34 144.33 297.17Q142.66 299 139.33 300.12Q136 301.24 121.5 301.26Q107 301.29 106.1 301.64L105.2 302ZM219 280.3L179 280.39L177 282Q177 287 177.48 288L177.97 289Q179 289.2 199 289.22L219 289.24Q219.88 291 219.88 295.5Q219.88 300 219.44 300.61L219 301.22Q177 301.24 174.5 300.71Q172 300.18 169.67 298.09Q167.33 296 166.65 295Q165.96 294 165.35 291.5Q164.73 289 164.79 273.5Q164.84 258 165.42 256.06Q166 254.12 167.5 252.28Q169 250.44 170.67 249.22Q172.34 248 175.02 247.5Q177.7 247 192.85 247.02Q208 247.05 210.12 247.52Q212.23 248 214.62 249.78Q217 251.55 218.39 254.78Q219.78 258 219.83 268.5Q219.88 279 219.44 279.65L219 280.3ZM237.84 248L239 247.06L251 247.38L265 263.61Q267 262.8 273.5 255.1L280 247.41L293 247.06Q293.58 249 293.29 249.97Q293 250.94 285 260.24Q277 269.55 275.6 271.77L274.21 274Q293 297.23 293.29 298.62Q293.58 300 293.29 300.64L293 301.29L280 300.88Q267 285.11 266 284.54L265 283.98L251 300.86L239 301.29L238 300.55Q237.67 299 238.1 298Q238.53 297 247.9 285.5L257.27 274Q257.18 273 248.46 263Q239.73 253 238.71 251.5L237.68 250L237.84 248ZM457.58 278Q412 278.3 411.33 278.65L410.67 279Q410.68 290 411.34 291.4L412 292.8Q414 293.53 435.5 293.56L457 293.59L458.21 295L458.21 300L457.35 301Q414 301.28 411.5 300.78Q409 300.27 407 298.51Q405 296.76 404.33 295.38Q403.66 294 403.41 292Q403.16 290 403.2 273.5Q403.24 257 404.12 254.3Q405 251.6 407.15 249.8Q409.31 248 411.65 247.53Q414 247.06 430.5 247.06Q447 247.06 449.35 247.53Q451.7 248 453.65 249.5Q455.61 251 456.52 252.5Q457.43 254 457.81 256Q458.2 258 458.2 267Q458.21 276 457.89 277L457.58 278ZM479 247.06Q523 247.11 525 247.56Q526.99 248 528.92 249.5Q530.86 251 531.54 252Q532.22 253 532.84 255.5Q533.46 258 533.23 279.42L533 300.83L527 301.19L525.64 300Q525.63 259 525.32 257.64L525 256.27Q522 254.66 506 254.66Q490 254.66 488.5 255.35L487 256.04Q486.18 258 486.14 279L486.1 300L485 301.12L479 301.28Q478.34 300 478.39 274Q478.45 248 478.72 247.53L479 247.06ZM602.06 248Q604 247.06 625.5 247.07Q647 247.08 648.95 247.54Q650.91 248 652.45 249.2Q654 250.39 655.5 252.6Q657 254.8 657.2 255.9Q657.39 257 657.2 279.03L657 301.06Q613 301.26 610.5 300.73Q608 300.21 607.15 299.61Q606.3 299 604.97 297.5Q603.65 296 602.84 294Q602.03 292 602.13 281.5L602.22 271Q604 270.28 626 270.28L648 270.28L649.52 269Q649.45 258 648.4 256.5L647.35 255Q646 254.68 624.5 254.62Q603 254.56 602.45 254.28L601.89 254L602.06 248ZM413 254.93Q410.72 258 410.68 263.5L410.65 269L412 270.23L450.07 270L450.43 258L448 254.92L413 254.93ZM106 259.61L104.82 261L105 288.06Q107 289.2 121 289.09L135 288.97L135 259.66L106 259.61ZM178 259.61Q177.01 261 177 263.5Q177 266 177.59 267L178.18 268Q206 268.13 206.5 268.1L207 268.06Q207.49 267 207.24 263.21L207 259.42L178 259.61ZM610.03 279Q610.05 290 610.28 291Q610.5 292 611.25 292.69L612 293.38L649.47 293L649 278.56Q611 278.26 610.51 278.63L610.03 279Z" fill="url(#_R_in_-w)" fill-rule="evenodd"></path></g></g><g transform="translate(260 84) scale(0.8)"><g transform="translate(-40 -333)"><path d="M193.7 333L196 332.86Q196.36 334 196.33 349L196.3 364L175.45 364Q173 361.79 172.75 360.89Q172.5 360 172.47 353Q172.44 346 172.69 344.5L172.94 343Q176 340.74 183.5 340.71Q191 340.69 192 340.41L193 340.14L193.7 333ZM309.2 333L311.48 333L312.21 340Q314 340.69 318.05 340.84L322.11 341L322.45 343L322 343.63L313.48 344L311.95 346L312.42 360Q314 360.85 318 361.05L322 361.25L322 364.2L312 364.2L308.86 361Q308.73 335 308.96 334L309.2 333ZM330.81 333L333.1 333L334 340.3Q350 340.7 351.5 341.51Q353 342.32 353.52 343.16Q354.05 344 354.16 345Q354.28 346 354.14 355.06L354 364.11L350.9 364Q350.71 346 350.36 345.11L350 344.22Q348 343.9 342 343.9Q336 343.9 335 344.37L334 344.83L333.36 364L330.28 364Q329.93 335 330.37 334L330.81 333ZM395.08 333L397.33 333L398 340.32L407 340.72Q407.93 342 407.93 342.5L407.93 343L407 343.86L398.67 344Q397.67 346 397.77 353L397.87 360Q400 360.88 403.5 360.9L407 360.93L407.88 363L407 364.36L398 364.28L394.69 361Q394.43 335 394.75 334L395.08 333ZM416.1 333L418.55 333Q419.06 335 418.86 335.5L418.66 336L415.97 336L416.1 333ZM574.43 333L576.47 333L577.15 340Q579 340.69 582.5 340.69L586 340.69L587.29 342L587.29 343Q586 343.9 582 344L578 344.09Q576.93 346 577.12 353L577.31 360Q579 360.87 582.64 360.94L586.28 361L587.23 363L586.98 364Q586 364.39 581.5 364.29L577 364.19L574.09 361Q573.8 335 574.11 334L574.43 333ZM44.07 336Q47 335.2 55 335.19Q63 335.19 65 335.68L67 336.17L68.64 339L68 341.49Q66 340.99 65 339.76L64 338.52L47 338.53L45.76 340Q45.64 344 46.32 345.2Q47 346.41 56 350.91L65 355.41L66.84 355L67.17 351L69.9 351L70.09 357L75 360.34L75.2 363L71 361.07Q66 364.31 56 364.35Q46 364.39 44.5 364.01Q43 363.63 41.86 362.32L40.73 361Q40.55 351 40.77 350.25Q41 349.51 42.26 348.25L43.51 347Q42.44 345 42.4 342.5Q42.35 340 42.53 339Q42.7 338 43.39 337L44.07 336ZM99.09 336L100 335.16L104 335.54L115 348.85Q117 347.74 122 341.73L127 335.73L132 335.31L132.28 364L130 364.33L129 363.61L128.71 341L128 340.47Q127 340.99 122 347.19Q117 353.38 116 353.72L115 354.05L103 339.93Q102.22 342 102.18 352.5Q102.13 363 102.02 363.5L101.91 364Q101 364.39 100.15 364.19L99.29 364L99.09 336ZM234.56 364L231.58 364Q231.32 355 231.23 354.5L231.15 354Q230 353.52 219.5 353.69L209 353.86L208.53 364L205.69 364Q205.32 340 205.8 338.5Q206.29 337 206.83 336.5Q207.38 336 208.69 335.6Q210 335.19 220 335.18Q230 335.17 231 335.3Q232 335.42 232.89 336.21Q233.78 337 234.37 338.5Q234.96 340 234.76 352L234.56 364ZM210 338.51L208.73 340L209 350.01L231.01 350L231.33 340L230 338.43L210 338.51ZM143.63 341Q161 340.71 162.5 341.61L164 342.5Q164.92 346 164.88 349.5Q164.84 353 164.5 353.5L164.16 354Q146 354.13 145.2 354.57L144.4 355Q144.17 358 144.38 359L144.59 360Q146 360.83 155 360.88L164 360.94L164.82 362L164.69 364Q146 364.39 145 364.27Q144 364.16 143.31 363.58Q142.63 363 141.71 361.5Q140.79 360 140.77 353Q140.75 346 140.88 344.93Q141 343.86 142.31 342.43L143.63 341ZM246.47 341Q264 340.73 265.5 341.74L267 342.75Q267.79 346 267.75 349.5Q267.71 353 267.36 353.48L267 353.95Q248 354.31 247.57 354.65L247.14 355Q246.95 358 247.15 359L247.35 360Q249 360.84 257.86 360.92L266.72 361L267.7 362L267.54 364Q248 364.36 246.5 363.52Q245 362.68 244.31 361.34Q243.62 360 243.62 352.5Q243.63 345 243.81 344.22Q244 343.45 245.24 342.22L246.47 341ZM278.85 341Q296 340.7 296.71 340.85Q297.42 341 298.21 341.69Q299 342.39 299.59 343.19L300.19 344L299.94 346L297.5 346L295 343.97Q282 343.9 281 344.29L280 344.67Q279.55 347 279.77 348.68L280 350.36Q296 350.68 297.3 351.34Q298.61 352 299.38 353Q300.14 354 300.25 355Q300.36 356 300.27 358.5Q300.18 361 299.59 361.86Q299 362.73 297.5 363.55Q296 364.37 288.5 364.37Q281 364.38 280 364.2Q279 364.02 278 363.09Q277 362.15 276.59 361.08L276.18 360Q278 358.83 278.5 358.85L279 358.87L280 360.38Q282 360.89 288.5 360.85Q295 360.81 295.5 360.69L296 360.56Q296.72 359 296.72 357.5Q296.72 356 296.36 355.23L296 354.46Q281 354.11 279.44 353.55L277.88 353Q276.11 350 276.08 348Q276.05 346 276.45 344.5Q276.86 343 277.85 342L278.85 341ZM364.52 341Q382 340.72 383.5 341.7L385 342.68Q385.8 348 385.76 350.5Q385.72 353 385.36 353.49L385 353.98Q367 354.13 366.11 354.57L365.23 355Q365.03 358 365.22 359L365.41 360Q367 360.84 376 360.95L385 361.06L385.71 362L385.55 364Q366 364.36 364.5 363.51Q363 362.67 362.31 361.33Q361.61 360 361.62 352.5Q361.63 345 361.81 344.24Q362 343.48 363.26 342.24L364.52 341ZM415.94 341L418 340.69L419.15 342Q419.15 362 419.01 363L418.87 364Q418 364.39 417 364.27L416 364.16Q415.72 363 415.83 352L415.94 341ZM430.87 341L451.58 341L451.92 343L451 343.9L432.94 344Q431.49 346 431.47 352Q431.46 358 431.65 359L431.84 360Q433 360.83 442 360.86L451 360.89L451.9 362L451.77 364Q433 364.38 431.34 363.69L429.67 363Q428.31 360 428.31 352.5Q428.32 345 428.6 344Q428.88 343 429.87 342L430.87 341ZM479.11 341L500.23 341L500 343.79Q482 343.9 481 344.44L480 344.98Q479.65 347 479.83 353.59L480 360.19Q482 360.88 491 360.91L500 360.94Q500.44 363 500.22 363.68L500 364.35L480 364.29Q477.18 362 476.8 360.5Q476.43 359 476.47 352Q476.5 345 476.76 344Q477.02 343 478.07 342L479.11 341ZM510.9 341L529 340.78Q531.46 343 531.89 344Q532.33 345 532.17 349.44L532 353.88L512 354.32Q511.48 359 511.74 359.7L512 360.39Q514 360.89 522.7 360.94L531.4 361L532.33 362L532 364.24Q512 364.32 510.5 363.27L509 362.22Q508.18 359 508.17 352.5Q508.17 346 508.49 344.5Q508.8 343 509.85 342L510.9 341ZM541.12 341Q561 340.7 562.5 341.59L564 342.47Q565.04 346 564.91 355L564.78 364L561.72 364Q561.58 346 561.29 345.2L561 344.39Q548 343.9 546.99 343.95L545.99 344L544.34 346L543.99 364L541 364.07L541.12 341ZM597.54 341Q612 340.69 612.33 340.84L612.65 341L613.03 343L612 343.9L600 343.95Q598.92 345 598.54 346Q598.17 347 598.12 355Q598.08 363 597.97 363.5L597.86 364Q596 364.39 595.48 364.19L594.97 364Q594.83 363 594.83 354Q594.83 345 594.92 344.43Q595 343.86 596.27 342.43L597.54 341ZM622.78 341Q640 340.7 641.5 341.52L643 342.35Q644.06 346 644.02 349.5Q643.98 353 643.62 353.5L643.26 354Q625 354.13 624.35 354.57L623.71 355Q623.48 358 623.68 359L623.89 360Q625 360.8 634 360.85L643 360.9L643.97 362L643.82 364Q625 364.39 624 364.24Q623 364.1 622.35 363.55Q621.69 363 620.83 361.5Q619.97 360 619.95 353Q619.92 346 620.07 345Q620.22 344 621.5 342.5L622.78 341ZM146 343.97L144.23 346L144.17 350Q145 350.45 153 350.54L161 350.63L161.59 350Q161.59 346 161.29 345.29Q161 344.58 160.5 344.29Q160 344.01 153 343.99L146 343.97ZM178 343.92L175.77 346L176 360.02Q178 360.87 184 360.88Q190 360.89 191.46 360.44L192.93 360Q193.24 346 192.62 345.11L192 344.23L178 343.92ZM248 344.32Q247.01 346 246.98 348L246.95 350Q248 350.63 255.5 350.63Q263 350.64 263.7 350.32L264.41 350L264.11 345Q262.44 344 255.72 343.97Q249 343.94 248.5 344.13L248 344.32ZM366 344.34Q365.06 346 365.04 348L365.03 350Q366 350.62 374 350.62L382 350.62L382.53 350L382.12 345Q380.44 344 373.72 343.97Q367 343.94 366.5 344.14L366 344.34ZM512 344.66Q511.48 346 511.48 348L511.48 350L512 350.62Q528 350.62 528.42 350.31L528.85 350L528.83 346L527.18 344Q514 343.9 513 344.28L512 344.66ZM625 343.98Q623.51 346 623.49 348L623.48 350Q624 350.32 632 350.48L640 350.64L640.66 350Q640.65 346 639.87 345L639.1 344L625 343.98ZM45 349.47L43.75 351L44 360.03Q46 360.87 55 360.88Q64 360.89 64.99 360.44L65.99 360Q64 357.88 57 354.36Q50 350.83 48 350.06Q46 349.29 45.5 349.38L45 349.47Z" fill="url(#_R_in_-g)" fill-rule="evenodd"></path></g></g></svg><div style="min-width:0"><span class="pill mute demo-pill">Demo</span><div class="brand-sub" id="bsub"></div></div><span id="bname" hidden></span><span id="logo" hidden></span></div>
+  <div class="tabs" role="tablist" aria-label="Demo view">
+    <button class="tab" role="tab" id="tab-booking" data-view="booking">Patient booking</button>
+    <button class="tab" role="tab" id="tab-desk" data-view="front-desk">Front desk</button>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <section id="v-booking"></section>
+  <section id="v-desk" hidden></section>
+</main>
+<div class="foot wrap">Demo prepared for Apex Dental with fictional patients · nothing is sent, stored or charged · <a href="https://www.wolfsoftwares.com/dental-appointment-software/" style="color:inherit">Built by Wolf Softwares</a> · <button class="fill" data-act="resetdemo" style="font-size:12.5px">Reset demo</button></div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog" aria-labelledby="drawerTitle"></aside>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+/* ===================== data ===================== */
+const ICONS = {
+  tooth:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M7.5 3.5c-2.6 0-4 2-4 4.6 0 2.4 1 3.6 1.6 5.6.7 2.4.9 7.3 2.9 7.3 1.7 0 1.6-5.2 4-5.2s2.3 5.2 4 5.2c2 0 2.2-4.9 2.9-7.3.6-2 1.6-3.2 1.6-5.6 0-2.6-1.4-4.6-4-4.6-1.8 0-2.7 1.1-4.5 1.1S9.3 3.5 7.5 3.5Z"/></svg>',
+  sparkle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/></svg>',
+  clip:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z"/></svg>',
+  child:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="7" r="3"/><path d="M6 21v-3a6 6 0 0 1 12 0v3M9.5 7.2h.01M14.5 7.2h.01"/></svg>',
+  align:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 10c0-3 3.6-5 8-5s8 2 8 5c0 4-3.6 9-8 9s-8-5-8-9Z"/><path d="M7 10.5h10"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  left:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
+  right:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  msg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4V5Z"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+  x:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>',
+  web:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M3 9h18"/></svg>',
+};
+const TYPES = [
+  { id:'check', name:'Check-up', dur:30, icon:'tooth', color:'#0F766E', desc:'Routine exam with your dentist' },
+  { id:'hyg', name:'Dental hygiene (cleaning)', dur:45, icon:'sparkle', color:'#0891B2', desc:'Scale and polish with our hygienist' },
+  { id:'newpt', name:'New patient consultation', dur:45, icon:'clip', color:'#1D4ED8', desc:'Full exam and a clear treatment plan', fee:true },
+  { id:'emerg', name:'Emergency or tooth pain', dur:30, icon:'bolt', color:'#DC2626', desc:'Same-day times kept free for urgent care', fee:true },
+  { id:'implant', name:'Implant assessment', dur:60, icon:'clip', color:'#B08743', desc:'Implants, All-on-4 / All-on-6 and bone grafts', fee:true },
+  { id:'align', name:'Clear aligner consultation', dur:45, icon:'align', color:'#7C3AED', desc:'Orthix, ClearCorrect and braces options' },
+  { id:'cosm', name:'Cosmetic consultation', dur:30, icon:'sparkle', color:'#BE185D', desc:'Whitening, veneers and smile makeovers' },
+  { id:'kids', name:"Children's check-up", dur:30, icon:'child', color:'#D97706', desc:'A gentle first visit for young patients' },
+];
+const typeById = (id) => TYPES.find((t) => t.id === id);
+const FEE = 20; // € booking fee for new-patient, emergency and longer appointments, deducted from the final bill
+const CLINICS = [
+  { id:'tp', name:'Trident Park', sub:'Main clinic · Mdina Road, Mrieħel', short:'Trident Park' },
+  { id:'sa', name:"St Anne's Clinic", sub:'Level 3, Triq Kanonku Karm Pirotta', short:"St Anne's" },
+];
+const clinicById = (id) => CLINICS.find((c) => c.id === id);
+const DEFAULT_SETTINGS = {
+  name:'Apex Dental', city:'Birkirkara, Malta', phone:'7985 4037', color:'#0F2140', logo:'',
+  providers:[
+    { id:'p1', name:'Dr Jonathan Mifsud', role:'Dental implantologist', clinic:'tp', types:['newpt','emerg','implant','check'] },
+    { id:'p2', name:'Dr Aleksandra Syrico Mallia', role:'Dentist, orthodontics', clinic:'tp', types:['align','newpt','check','kids'] },
+    { id:'p3', name:'Dr Charlotte Axisa', role:'General and restorative dentist', clinic:'tp', types:['check','newpt','emerg','kids'] },
+    { id:'p4', name:'Kay Waldis', role:'Dental hygienist', clinic:'tp', types:['hyg'] },
+    { id:'p5', name:'Dr Martha Lopez', role:'General and cosmetic dentist', clinic:'sa', types:['check','newpt','cosm','emerg'] },
+    { id:'p6', name:"Dr Massimo D'Alessandro", role:'General dentist', clinic:'sa', types:['check','newpt','emerg','kids','hyg'] },
+    { id:'p7', name:'Dr Adam Borg', role:'General dentist', clinic:'sa', types:['check','newpt','emerg','cosm','kids'] },
+  ],
+};
+const FIRST = ['Maria','Joseph','Daniel','Sarah','Luke','Martina','Matthew','Nicole','Kurt','Rachel','Andrea','Christine','Mark','Elena','Jake','Gabriel','Julia','Kyle','Leah','Neil','Tiziana','Marco','Giulia','Thomas','Claire','Ryan','Francesca','Paul','Michela','Stephen'];
+const LAST = ['Borg','Camilleri','Vella','Farrugia','Zammit','Galea','Grech','Attard','Spiteri','Micallef','Azzopardi','Cassar','Pace','Caruana','Debono','Fenech','Sammut','Agius','Schembri','Bonnici','Gauci','Abela','Busuttil','Ellul','Tabone'];
+
+/* seeded random so the demo looks the same on every open */
+let seed = 20261031;
+const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+const pick = (a) => a[Math.floor(rnd() * a.length)];
+
+/* ===================== time helpers ===================== */
+const DAY = 864e5;
+const today0 = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })();
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const fmtTime = (d) => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+const fmtDay = (d) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+const fmtLong = (d) => d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+function hours(d, clinic = 'tp') { // opening hours in minutes from midnight, null when closed
+  const w = d.getDay();
+  if (w === 0) return clinic === 'tp' ? { open: 540, close: 750, lunch: null, emergOnly: true } : null; // Sunday: emergencies at Trident Park only
+  if (w === 6) return { open: 540, close: clinic === 'tp' ? 810 : 780, lunch: null };
+  return { open: 540, close: 1140, lunch: null };
+}
+const atMin = (d, m) => { const x = new Date(d); x.setHours(0, m, 0, 0); return x; };
+const minOf = (d) => d.getHours() * 60 + d.getMinutes();
+
+/* ===================== state ===================== */
+let S = { settings: structuredClone(DEFAULT_SETTINGS), appts: [], feed: [], recalls: [], reminders: null };
+const UI = { view: 'booking', phone: false, step: 0, b: {}, desk: { tab: 'schedule', day: new Date(today0), fresh: null, clinic: 'tp' }, };
+const prov = (id) => S.settings.providers.find((p) => p.id === id);
+const initials = (n) => n.replace(/^Dr\.?\s*/, '').split(/[\s,]+/).filter((w) => /^[A-Z]/.test(w)).slice(0, 2).map((w) => w[0]).join('');
+const pname = () => pick(FIRST) + ' ' + pick(LAST);
+let idc = 1;
+
+function seedData() {
+  seed = 20261031; idc = 1;
+  const appts = [];
+  for (let k = -4; k <= 14; k++) {
+    const day = addDays(today0, k);
+    for (const p of S.settings.providers) {
+      const h = hours(day, p.clinic);
+      if (!h || h.emergOnly) continue;
+      let m = h.open + (rnd() < .5 ? 0 : 30);
+      while (m < h.close) {
+        if (h.lunch && m >= h.lunch[0] && m < h.lunch[1]) { m = h.lunch[1]; continue; }
+        const fill = k < 0 ? .78 : k === 0 ? .72 : Math.max(.25, .7 - k * .035);
+        if (rnd() < fill) {
+          const t = typeById(pick(p.types.filter((x) => x !== 'emerg').concat(p.types.includes('hyg') ? ['hyg', 'hyg'] : [])));
+          const dur = t.dur;
+          if (m + dur > h.close || (h.lunch && m < h.lunch[0] && m + dur > h.lunch[0])) { m += 30; continue; }
+          const start = atMin(day, m);
+          let status;
+          const now = new Date();
+          if (k < 0) status = rnd() < .08 ? 'no-show' : 'completed';
+          else if (k === 0) status = start < now ? (rnd() < .07 ? 'no-show' : (start.getTime() + dur * 6e4 < now.getTime() ? 'completed' : 'checked-in')) : (rnd() < .82 ? 'confirmed' : 'unconfirmed');
+          else status = rnd() < (k < 3 ? .7 : .55) ? 'confirmed' : 'unconfirmed';
+          appts.push({ id: 'a' + idc++, pid: p.id, clinic: p.clinic, patient: pname(), type: t.id, start: start.getTime(), dur, status, source: rnd() < .42 ? 'online' : 'phone', isNew: t.id === 'newpt', paid: !!t.fee && rnd() < .8 });
+          m += Math.ceil(dur / 30) * 30;
+        } else m += 30;
+      }
+    }
+  }
+  S.appts = appts;
+  const now = Date.now();
+  const recent = appts.filter((a) => a.source === 'online' && a.start > now).slice(0, 4);
+  S.feed = [
+    ...recent.map((a, i) => ({ id: 'f' + i, icon: 'cal', text: `<b>${a.patient}</b> booked <b>${typeById(a.type).name}</b> online at ${clinicById(a.clinic).short} for ${fmtDay(new Date(a.start))}, ${fmtTime(new Date(a.start))}${typeById(a.type).fee ? ' · €' + FEE + ' fee paid' : ''}`, at: now - (i * 47 + 12) * 6e4 })),
+    { id: 'fr1', icon: 'msg', text: `Reminder texts sent to <b>23 patients</b> for tomorrow`, at: now - 95 * 6e4 },
+    { id: 'fr2', icon: 'check', text: `<b>${pname()}</b> confirmed by text (replied C)`, at: now - 130 * 6e4 },
+    { id: 'fr3', icon: 'user', text: `<b>${pname()}</b> completed the medical history form online`, at: now - 190 * 6e4 },
+  ].sort((a, b) => b.at - a.at);
+  S.recalls = Array.from({ length: 9 }, (_, i) => {
+    const last = addDays(today0, -(170 + Math.floor(rnd() * 40)));
+    return { id: 'r' + i, patient: pname(), phone: '79' + (21 + i * 7) + ' ' + (4100 + i * 263), last: last.getTime(), due: addDays(last, 182).getTime(), status: i < 2 ? 'booked' : i < 4 ? 'sent' : 'due' };
+  });
+  S.reminders = [
+    { id: 'confirm', when: 'Right away', sub: 'after booking', ch: 'Text + email', on: true, text: 'Booking confirmation with date, time, dentist, clinic address, the €20 fee receipt and a link to reschedule.' },
+    { id: 'forms', when: 'Right away', sub: 'new patients only', ch: 'Email', on: true, text: 'Link to complete the medical history form online before the visit.' },
+    { id: 'd2', when: '2 days before', sub: 'at 10:00', ch: 'Text', on: true, text: 'Reminder asking the patient to reply C to confirm or R to reschedule.' },
+    { id: 'h2', when: '2 hours before', sub: '', ch: 'Text', on: true, text: 'Final reminder with parking at Trident Park or directions to Level 3 at St Anne\'s.' },
+    { id: 'review', when: 'After the visit', sub: 'same evening', ch: 'Text', on: false, text: 'Thank-you message with a link to leave a Google review.' },
+    { id: 'recall', when: '6 months later', sub: 'cleaning due', ch: 'Text + email', on: true, text: 'Recall reminder with a one-tap link to book the next hygiene visit.' },
+  ];
+}
+
+/* ===================== brand ===================== */
+function applyBrand() {
+  const st = S.settings, root = document.documentElement;
+  root.style.setProperty('--brand', st.color);
+  const c = st.color.replace('#', ''); const r = parseInt(c.slice(0, 2), 16), g = parseInt(c.slice(2, 4), 16), b = parseInt(c.slice(4, 6), 16);
+  root.style.setProperty('--brand-ink', (r * 299 + g * 587 + b * 114) / 1000 > 160 ? '#0B1213' : '#FFFFFF');
+  document.getElementById('bname').textContent = st.name;
+  document.getElementById('bsub').textContent = 'Trident Park & St Anne\'s · ' + st.phone;
+  document.getElementById('logo').innerHTML = '<span class="mono">A</span>';
+}
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ===================== views ===================== */
+function setView(v) {
+  UI.view = v === 'front-desk' ? 'front-desk' : 'booking';
+  document.getElementById('tab-booking').setAttribute('aria-selected', UI.view === 'booking');
+  document.getElementById('tab-desk').setAttribute('aria-selected', UI.view === 'front-desk');
+  document.getElementById('v-booking').hidden = UI.view !== 'booking';
+  document.getElementById('v-desk').hidden = UI.view !== 'front-desk';
+  if (UI.view === 'booking') renderBooking(); else renderDesk();
+}
+window.addEventListener('hashchange', () => setView(location.hash.slice(1)));
+
+/* ---------- availability ---------- */
+function freeSlots(day, typeId, pid, clinic = UI.b.clinic || 'tp') {
+  const h = hours(day, clinic); if (!h) return [];
+  if (h.emergOnly && typeId !== 'emerg') return [];
+  const t = typeById(typeId), dur = t.dur;
+  const provs = S.settings.providers.filter((p) => p.clinic === clinic && p.types.includes(typeId) && (!pid || p.id === pid));
+  const now = Date.now(), out = new Map();
+  for (const p of provs) {
+    const busy = S.appts.filter((a) => a.pid === p.id && a.status !== 'cancelled' && sameDay(new Date(a.start), day));
+    for (let m = h.open; m + dur <= h.close; m += 15) {
+      if (m % 30 && typeId !== 'emerg') continue;
+      if (h.emergOnly && m % 30) continue;
+      if (h.lunch && m < h.lunch[1] && m + dur > h.lunch[0]) continue;
+      const s = atMin(day, m).getTime(), e = s + dur * 6e4;
+      if (s < now + 60 * 6e4) continue;
+      if (busy.some((a) => s < a.start + a.dur * 6e4 && e > a.start)) continue;
+      if (!out.has(m)) out.set(m, p.id);
+    }
+  }
+  return [...out.entries()].sort((a, b) => a[0] - b[0]).map(([m, p]) => ({ m, pid: p }));
+}
+function firstAvailable(typeId, pid) {
+  for (let k = 0; k < 21; k++) { const d = addDays(today0, k); const s = freeSlots(d, typeId, pid); if (s.length) return { day: d, slot: s[0] }; }
+  return null;
+}
+
+/* ---------- patient booking ---------- */
+const HOW = [
+  { t: 'Both clinics, one system', d: 'Patients choose Trident Park or St Anne\'s. Each clinic has its own hours, dentists and Sunday rules.' },
+  { t: 'Patients choose the visit', d: 'Each visit type has its own length, so the schedule never overbooks a chair.' },
+  { t: 'Any dentist or a favourite', d: 'Patients can pick a dentist or take the first free time. Each dentist only shows the visits they do.' },
+  { t: 'Only real free times', d: 'Times come straight from the live schedule. Existing visits and short-notice times are hidden, and on Sundays only emergency times show.' },
+  { t: 'Details', d: 'New and returning patients give the details the front desk needs, and choose English or Italian messages.' },
+  { t: 'The €20 booking fee, paid online', d: 'For new-patient, emergency and longer visits the fee is paid by card while booking, then deducted from the final bill. No chasing.' },
+  { t: 'Booked and confirmed instantly', d: 'No waiting for a reply: the visit lands on the front desk schedule straight away, and the patient gets a text and an email.' },
+];
+function feeDue(b) { return !!typeById(b.type)?.fee; }
+function renderBooking() {
+  const st = UI.step, b = UI.b, el = document.getElementById('v-booking');
+  // steps: 0 clinic, 1 visit, 2 dentist, 3 time, 4 details, 5 pay (fee visits only), 6 booked
+  const titles = ['Which clinic would you like to visit?', 'What do you need?', 'Who would you like to see?', 'Pick a day and time', 'Your details', 'Secure your appointment', "You're booked"];
+  let body = '';
+  const back = st > 0 && st < 6 ? `<button class="back" data-act="back">${ICONS.left} Back</button>` : '';
+  if (st === 0) {
+    body = `<p class="bk-q">${titles[0]}</p><div class="opts">` + CLINICS.map((c) => `<button class="opt" data-act="clinic" data-id="${c.id}"><span class="ic gold">${ICONS.cal}</span><span style="min-width:0"><b>${c.name}</b><small>${c.sub}</small></span><span class="meta">${c.id === 'tp' ? 'Mon–Sat<br>Sun emergencies' : 'Mon–Sat'}</span></button>`).join('') + `</div>`;
+  } else if (st === 1) {
+    const types = TYPES.filter((t) => S.settings.providers.some((p) => p.clinic === b.clinic && p.types.includes(t.id)));
+    body = `${back}<p class="bk-q">${titles[1]}</p><div class="opts">` + types.map((t) => {
+      const fa = t.id === 'emerg' ? firstAvailable(t.id) : null;
+      return `<button class="opt" data-act="type" data-id="${t.id}"><span class="ic">${ICONS[t.icon]}</span><span style="min-width:0"><b>${t.name}</b><small>${t.desc}</small>${t.fee ? `<span class="fee">€${FEE} booking fee, deducted from your bill</span>` : ''}</span><span class="meta"><span class="tnum">${t.dur} min</span>${fa && sameDay(fa.day, today0) ? '<br><span class="pill ok">Today</span>' : ''}</span></button>`;
+    }).join('') + `</div>`;
+  } else if (st === 2) {
+    const t = typeById(b.type);
+    const ps = S.settings.providers.filter((p) => p.clinic === b.clinic && p.types.includes(t.id));
+    const any = firstAvailable(t.id);
+    body = `${back}<p class="bk-q">${titles[2]}</p><div class="opts">
+      <button class="opt" data-act="prov" data-id=""><span class="ic">${ICONS.bolt}</span><span><b>First available</b><small>${any ? 'Earliest: ' + fmtDay(any.day) + ', ' + fmtTime(atMin(any.day, any.slot.m)) : 'Fastest way to be seen'}</small></span></button>` +
+      ps.map((p) => { const fa = firstAvailable(t.id, p.id); return `<button class="opt" data-act="prov" data-id="${p.id}"><span class="av ${['', 'alt', 'alt2'][S.settings.providers.indexOf(p) % 3]}">${initials(p.name)}</span><span style="min-width:0"><b>${esc(p.name)}</b><small>${esc(p.role)}${fa ? ' · next ' + fmtDay(fa.day) : ''}</small></span></button>`; }).join('') + `</div>`;
+  } else if (st === 3) {
+    if (!b.day) { const fa = firstAvailable(b.type, b.pid); b.day = fa ? fa.day : new Date(today0); }
+    const days = Array.from({ length: 14 }, (_, k) => addDays(today0, k)).filter((d) => hours(d, b.clinic) && (!hours(d, b.clinic).emergOnly || b.type === 'emerg'));
+    const slots = freeSlots(b.day, b.type, b.pid);
+    const groups = [['Morning', (m) => m < 720], ['Afternoon', (m) => m >= 720 && m < 1020], ['Evening', (m) => m >= 1020]];
+    body = `${back}<p class="bk-q">${titles[3]}</p><div class="dates" role="group" aria-label="Choose a day">` + days.map((d) => {
+      const n = freeSlots(d, b.type, b.pid).length;
+      return `<button class="date" data-act="day" data-t="${d.getTime()}" aria-pressed="${sameDay(d, b.day)}" ${n ? '' : 'disabled'}><small>${d.toLocaleDateString('en-GB', { weekday: 'short' })}</small><b class="tnum">${d.getDate()}</b><i>${d.toLocaleDateString('en-GB', { month: 'short' })}</i></button>`;
+    }).join('') + `</div>` + (b.type === 'emerg' && b.day.getDay() === 0 ? `<p class="note" style="margin:-6px 0 12px">Sunday emergency appointments are at Trident Park and carry an extra fee.</p>` : '') + (slots.length ? groups.map(([g, f]) => { const ss = slots.filter((s) => f(s.m)); return ss.length ? `<div class="slot-group"><div class="label">${g}</div><div class="slots">` + ss.map((s) => `<button class="slot" data-act="slot" data-m="${s.m}" data-pid="${s.pid}" aria-pressed="${b.m === s.m}">${fmtTime(atMin(b.day, s.m))}</button>`).join('') + `</div></div>` : ''; }).join('') : `<div class="empty">No open times this day. Try another date.</div>`) +
+      `<div class="actions"><span class="note">${b.m != null ? esc(prov(b.slotPid).name) + ' · ' + fmtDay(b.day) + ', ' + fmtTime(atMin(b.day, b.m)) : ''}</span><button class="btn" data-act="next" ${b.m == null ? 'disabled' : ''}>Continue</button></div>`;
+  } else if (st === 4) {
+    const d = b.d || (b.d = { kind: 'new', first: '', last: '', phone: '', email: '', lang: 'English', note: '', sms: true });
+    body = `${back}<p class="bk-q">${titles[4]}</p>
+      <p class="note when-line">${typeById(b.type).name} · ${esc(prov(b.slotPid).name)} · ${clinicById(b.clinic).short} · <span class="tnum">${fmtDay(b.day)}, ${fmtTime(atMin(b.day, b.m))}</span></p>
+      <div class="seg" role="group" aria-label="Patient type" style="margin-bottom:14px"><button data-act="kind" data-k="new" aria-pressed="${d.kind === 'new'}">I'm a new patient</button><button data-act="kind" data-k="ret" aria-pressed="${d.kind === 'ret'}">I've been here before</button></div>
+      <form class="form" id="dform" novalidate>
+        <div class="field"><label for="f-first">First name</label><input id="f-first" name="first" autocomplete="off" value="${esc(d.first)}" required></div>
+        <div class="field"><label for="f-last">Surname</label><input id="f-last" name="last" autocomplete="off" value="${esc(d.last)}" required></div>
+        <div class="field"><label for="f-phone">Mobile number</label><input id="f-phone" name="phone" inputmode="tel" autocomplete="off" value="${esc(d.phone)}" required></div>
+        <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="off" value="${esc(d.email)}"></div>
+        <div class="field"><label for="f-lang">Messages in</label><select id="f-lang" name="lang">${['English', 'Italiano'].map((l) => `<option ${d.lang === l ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div class="field"><label for="f-note">Anything we should know? <span class="note">(optional)</span></label><input id="f-note" name="note" autocomplete="off" value="${esc(d.note)}"></div>
+        <label class="check full" for="f-sms"><input type="checkbox" id="f-sms" name="sms" ${d.sms ? 'checked' : ''}> Text me reminders about this visit</label>
+      </form>
+      <div class="actions"><button class="fill" data-act="sample">Fill sample patient</button><button class="btn" data-act="confirm">${feeDue(b) ? 'Continue to secure your slot' : 'Book appointment'}</button></div>`;
+  } else if (st === 5) {
+    const t = typeById(b.type);
+    body = `${back}<p class="bk-q">${titles[5]}</p>
+      <p class="note when-line">${t.name} · ${esc(prov(b.slotPid).name)} · <span class="tnum">${fmtDay(b.day)}, ${fmtTime(atMin(b.day, b.m))}</span></p>
+      <div class="pay">
+        <div class="pay-row"><span>Booking fee</span><b>€${FEE}.00</b></div>
+        <div class="pay-row"><span class="note">Deducted from your final bill at the clinic</span><b class="note">−€${FEE}.00 later</b></div>
+        <div class="pay-row pay-total"><span>Pay now</span><b>€${FEE}.00</b></div>
+        <div class="card-mock" aria-label="Demo card, no real payment">
+          <div class="cm-line"><span>Card number</span><span class="cm-num">4242 4242 4242 4242</span></div>
+          <div class="cm-line"><span>Expiry · CVC</span><span>12/28 · 123</span></div>
+        </div>
+        <div class="secure"><span style="width:16px;height:16px;display:inline-block">${ICONS.check}</span>Card payments by Stripe. Demo card, no real payment is taken.</div>
+      </div>
+      <div class="actions"><span class="note">Free to reschedule up to 24 hours before</span><button class="btn" data-act="pay">Pay €${FEE} and book</button></div>`;
+  } else {
+    const a = S.appts.find((x) => x.id === b.bookedId), when = new Date(a.start), p = prov(a.pid), d = b.d, c = clinicById(a.clinic);
+    const it = d.lang === 'Italiano';
+    const sms = it
+      ? `Apex Dental: Ciao ${esc(d.first)}, il tuo appuntamento è fissato per ${when.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' })} alle ${fmtTime(when)} con ${esc(p.name)} (${c.short}).${a.paid ? ` Quota di prenotazione di €${FEE} ricevuta.` : ''} Rispondi C per confermare o R per spostarlo.`
+      : `Apex Dental: Hi ${esc(d.first)}, you're booked on ${fmtDay(when)} at ${fmtTime(when)} with ${esc(p.name)} at ${c.short}.${a.paid ? ` €${FEE} booking fee received, deducted from your bill.` : ''} Reply C to confirm or R to reschedule.`;
+    body = `<div class="done"><span class="done-ic">${ICONS.check}</span><h2>You're booked, ${esc(d.first)}!</h2>
+      <p class="note">${typeById(a.type).name} with ${esc(p.name)} · ${c.name}</p>
+      <p class="done-when tnum">${fmtLong(when)} · ${fmtTime(when)}</p>${a.paid ? `<p class="note" style="margin-top:6px">€${FEE} booking fee paid · deducted from your final bill</p>` : ''}</div>
+      <div class="sms"><div class="from">Text sent to ${esc(d.phone || 'the patient')}</div><div class="bubble">${sms}</div></div>
+      <div class="actions"><button class="btn ghost" data-act="again">Book another</button><button class="btn" data-act="todesk">See it on the front desk ${ICONS.right}</button></div>`;
+  }
+  const total = 7, shown = st;
+  const steps = `<div class="steps" aria-hidden="true">${Array.from({ length: total }, (_, i) => `<span class="${i <= shown ? 'on' : ''}"></span>`).join('')}</div>`;
+  const card = `<div class="bk"><div class="bk-head"><h1>Book an appointment</h1><p>${esc(S.settings.name)}${b.clinic ? ' · ' + clinicById(b.clinic).name : ' · Birkirkara, Malta'}</p>${steps}</div><div class="bk-body">${body}</div></div>`;
+  const how = HOW[Math.min(st, HOW.length - 1)];
+  const tools = `<div class="bk-tools"><p class="hint"><b>${how.t}.</b> ${how.d}</p><div class="seg mini" role="group" aria-label="Preview size"><button data-act="phone" data-v="0" aria-pressed="${!UI.phone}">${ICONS.web}<span class="sr">Website</span></button><button data-act="phone" data-v="1" aria-pressed="${UI.phone}">${ICONS.phone}<span class="sr">Phone</span></button></div></div>`;
+  el.innerHTML = `<div class="book-col">${tools}<div class="stage">${UI.phone ? `<div class="phone">${card}</div>` : card}</div></div>`;
+}
+
+function readForm() {
+  const f = document.getElementById('dform'); if (!f) return;
+  const d = UI.b.d;
+  ['first', 'last', 'phone', 'email', 'lang', 'note'].forEach((k) => { if (f.elements[k]) d[k] = f.elements[k].value.trim(); });
+  d.sms = f.elements.sms.checked;
+}
+
+function details() {
+  readForm();
+  const d = UI.b.d;
+  if (!d.first || !d.last || !d.phone) { toast('Add first name, surname and mobile number to book.'); return; }
+  if (feeDue(UI.b)) { UI.step = 5; renderBooking(); } else book(false);
+}
+function book(paid) {
+  const b = UI.b, d = b.d;
+  const start = atMin(b.day, b.m).getTime(), t = typeById(b.type);
+  const a = { id: 'a' + idc++, pid: b.slotPid, clinic: b.clinic, patient: d.first + ' ' + d.last, type: b.type, start, dur: t.dur, status: 'confirmed', source: 'online', isNew: d.kind === 'new', phone: d.phone, paid };
+  S.appts.push(a);
+  S.feed.unshift({ id: 'f' + a.id, icon: 'cal', text: `<b>${esc(a.patient)}</b> booked <b>${t.name}</b> online at ${clinicById(a.clinic).short} for ${fmtDay(new Date(start))}, ${fmtTime(new Date(start))}${paid ? ' · €' + FEE + ' fee paid' : ''}`, at: Date.now(), fresh: true });
+  b.bookedId = a.id; UI.desk.fresh = a.id; UI.desk.scrolled = false; UI.desk.day = new Date(b.day); UI.desk.tab = 'schedule'; UI.desk.clinic = b.clinic;
+  UI.step = 6; renderBooking();
+}
+
+/* ---------- front desk ---------- */
+const STATUS = { 'confirmed': ['ok', 'Confirmed'], 'unconfirmed': ['warn', 'Not confirmed'], 'checked-in': ['info', 'Checked in'], 'completed': ['mute', 'Completed'], 'no-show': ['bad', 'No-show'], 'cancelled': ['mute', 'Cancelled'] };
+function renderDesk() {
+  const el = document.getElementById('v-desk'), day = UI.desk.day, cl = UI.desk.clinic, ps = S.settings.providers.filter((p) => p.clinic === cl);
+  const dayAppts = S.appts.filter((a) => a.clinic === cl && sameDay(new Date(a.start), day) && a.status !== 'cancelled');
+  const weekStart = addDays(today0, -today0.getDay());
+  const onlineWeek = S.appts.filter((a) => a.clinic === cl && a.source === 'online' && a.start >= weekStart.getTime() && a.start < addDays(weekStart, 7).getTime()).length;
+  const unconf = S.appts.filter((a) => a.clinic === cl && a.status === 'unconfirmed' && a.start > Date.now() && a.start < addDays(today0, 3).getTime()).length;
+  const recallDue = S.recalls.filter((r) => r.status === 'due').length;
+  const feesWeek = S.appts.filter((a) => a.paid && a.start >= weekStart.getTime() && a.start < addDays(weekStart, 7).getTime()).length * FEE;
+  const isToday = sameDay(day, today0);
+  let content = '';
+  if (UI.desk.tab === 'schedule') {
+    const h0 = hours(day, cl), h = h0 && !h0.emergOnly ? h0 : (h0 ? { ...h0 } : null);
+    if (!h) content = `<div class="panel"><div class="empty" style="margin:16px">${clinicById(cl).name} is closed on ${fmtLong(day)}.</div></div>`;
+    else {
+      const PX = 1.3, top = h.open, H = (h.close - h.open) * PX;
+      const cols = `56px repeat(${ps.length}, minmax(180px,1fr))`;
+      const ticks = []; for (let m = h.open; m <= h.close; m += 60) ticks.push(`<span style="top:${(m - top) * PX}px">${fmtTime(atMin(day, m))}</span>`);
+      const nowM = minOf(new Date());
+      const nowLine = isToday && nowM > h.open && nowM < h.close ? `<div class="nowline" style="top:${(nowM - top) * PX}px;grid-column:2/-1"></div>` : '';
+      content = `<div class="fd-grid"><div class="panel"><div class="panel-h"><h2>${clinicById(cl).name} · ${fmtLong(day)}</h2><span class="note">${h.emergOnly ? 'Sunday: emergency times only' : 'Click a visit to check in or confirm'}</span></div>
+        <div class="sched-scroll"><div class="sched">
+          <div class="sched-head" style="grid-template-columns:${cols}"><div></div>${ps.map((p, i) => `<div><span class="av ${['', 'alt', 'alt2'][i % 3]}">${initials(p.name)}</span><span style="min-width:0"><b>${esc(p.name)}</b><small class="tnum">${dayAppts.filter((a) => a.pid === p.id).length} visits</small></span></div>`).join('')}</div>
+          <div class="sched-body" style="grid-template-columns:${cols};height:${H}px;--hour:${60 * PX}px">
+            <div class="tcol">${ticks.join('')}</div>
+            ${ps.map((p) => `<div class="pcol">${h.lunch ? `<div class="lunch" style="top:${(h.lunch[0] - top) * PX}px;height:${(h.lunch[1] - h.lunch[0]) * PX}px">Lunch</div>` : ''}${dayAppts.filter((a) => a.pid === p.id).map((a) => {
+              const s = new Date(a.start), t = typeById(a.type), y = (minOf(s) - top) * PX, hh = a.dur * PX - 3;
+              return `<button class="appt st-${a.status} ${UI.desk.fresh === a.id ? 'fresh' : ''}" style="top:${y}px;height:${hh}px;--c:${t.color}" data-act="appt" data-id="${a.id}" aria-label="${esc(a.patient)}, ${t.name}, ${fmtTime(s)}"><span class="tags">${a.source === 'online' ? '<span class="dot" title="Booked online" style="background:var(--brand)"></span>' : ''}${a.isNew ? '<span class="dot" title="New patient" style="background:#2563EB"></span>' : ''}${a.paid ? '<span class="dot" title="Booking fee paid" style="background:var(--gold)"></span>' : ''}</span><b>${esc(a.patient)}</b>${hh > 34 ? `<small class="tnum">${fmtTime(s)} · ${t.name}</small>` : ''}${hh > 56 ? `<small>${STATUS[a.status][1]}</small>` : ''}</button>`;
+            }).join('')}</div>`).join('')}
+            ${nowLine}
+          </div></div></div>
+        <div class="legend"><span><i class="dot" style="background:var(--brand)"></i>Booked online</span><span><i class="dot" style="background:#2563EB"></i>New patient</span><span><i class="dot" style="background:var(--gold)"></i>€${FEE} fee paid online</span></div></div>
+        <div class="panel"><div class="panel-h"><h2>Live activity</h2><span class="pill ok">Live</span></div><ul class="feed">${S.feed.slice(0, 7).map((f) => `<li class="${f.fresh ? 'fresh' : ''}"><span class="fi">${ICONS[f.icon]}</span><span>${f.text}<time>${ago(f.at)}</time></span></li>`).join('')}</ul></div></div>`;
+    }
+  } else if (UI.desk.tab === 'recalls') {
+    content = `<div class="panel"><div class="panel-h"><h2>Patients due for a hygiene visit</h2><button class="btn sm" data-act="recall-all" ${recallDue ? '' : 'disabled'}>Text all due patients</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Patient</th><th>Last hygiene visit</th><th>Due</th><th>Status</th><th></th></tr></thead><tbody>` +
+      S.recalls.map((r) => `<tr><td><b>${esc(r.patient)}</b><br><span class="note tnum">${r.phone}</span></td><td class="num">${fmtDay(new Date(r.last))}</td><td class="num">${fmtDay(new Date(r.due))}</td><td>${r.status === 'booked' ? '<span class="pill ok">Booked</span>' : r.status === 'sent' ? '<span class="pill info">Text sent</span>' : '<span class="pill warn">Due</span>'}</td><td style="text-align:right">${r.status === 'due' ? `<button class="btn sm ghost" data-act="recall" data-id="${r.id}">Send recall text</button>` : ''}</td></tr>`).join('') +
+      `</tbody></table></div><p class="note" style="padding:12px 16px;border-top:1px solid var(--line)">Patients get a text with a link that opens the booking page with their hygiene visit already selected.</p></div>`;
+  } else {
+    content = `<div class="panel"><div class="panel-h"><h2>Automatic reminders</h2><span class="note">Sent for every visit, no staff time</span></div><ul class="rem-list">` +
+      S.reminders.map((r) => `<li class="rem"><div class="when">${r.when}<small>${r.sub}</small></div><div><span class="pill mute">${r.ch}</span><p>${r.text}</p></div><label class="switch" title="Turn on or off"><input type="checkbox" id="rem-${r.id}" data-act="rem" data-id="${r.id}" ${r.on ? 'checked' : ''}><span></span><b class="sr">${r.when}</b></label></li>`).join('') +
+      `</ul></div><div class="panel" style="margin-top:16px"><div class="panel-h"><h2>Preview: 2-day reminder</h2></div><div style="padding:16px"><div class="bubble">Apex Dental: Hi Maria, a reminder of your check-up with ${esc(S.settings.providers[2].name)} at Trident Park on ${fmtDay(addDays(today0, 2))} at 10:30. Reply C to confirm or R to reschedule.</div></div></div>`;
+  }
+  el.innerHTML = `<div class="fd-top"><h1>Front desk</h1><div class="clinic-sw" role="group" aria-label="Clinic">${CLINICS.map((c) => `<button data-act="dclinic" data-id="${c.id}" aria-pressed="${cl === c.id}">${c.short}</button>`).join('')}</div>
+      ${UI.desk.tab === 'schedule' ? `<div class="daynav"><button class="icon-btn" data-act="dprev" aria-label="Previous day">${ICONS.left}</button><b>${isToday ? 'Today' : fmtDay(day)}</b><button class="icon-btn" data-act="dnext" aria-label="Next day">${ICONS.right}</button>${isToday ? '' : '<button class="btn sm ghost" data-act="dtoday">Today</button>'}</div>` : ''}</div>
+    <div class="kpis">
+      <div class="kpi"><small>Visits ${isToday ? 'today' : 'this day'}</small><b>${dayAppts.length}</b><i>${dayAppts.filter((a) => a.status === 'checked-in').length} checked in now</i></div>
+      <div class="kpi"><small>Booked online this week</small><b>${onlineWeek}</b><i>No phone call or WhatsApp needed</i></div>
+      <div class="kpi"><small>Not yet confirmed</small><b>${unconf}</b><i>Next 3 days · reminders running</i></div>
+      <div class="kpi"><small>Booking fees paid online</small><b class="tnum">€${feesWeek}</b><i>This week · both clinics</i></div>
+    </div>
+    <div class="subtabs" role="tablist">
+      <button class="subtab" role="tab" data-act="dtab" data-t="schedule" aria-selected="${UI.desk.tab === 'schedule'}">Schedule</button>
+      <button class="subtab" role="tab" data-act="dtab" data-t="recalls" aria-selected="${UI.desk.tab === 'recalls'}">Recalls <span class="pill warn tnum">${recallDue}</span></button>
+      <button class="subtab" role="tab" data-act="dtab" data-t="reminders" aria-selected="${UI.desk.tab === 'reminders'}">Reminders</button>
+    </div>${content}`;
+  if (UI.desk.fresh && UI.desk.tab === 'schedule' && !UI.desk.scrolled) {
+    const f = el.querySelector('.appt.fresh'); if (f) { UI.desk.scrolled = true; setTimeout(() => f.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120); }
+  }
+}
+const ago = (t) => { const m = Math.max(0, Math.round((Date.now() - t) / 6e4)); return m < 1 ? 'Just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; };
+
+/* ---------- drawers ---------- */
+function openDrawer(html) { const d = document.getElementById('drawer'); d.innerHTML = html; d.hidden = false; document.getElementById('scrim').hidden = false; const f = d.querySelector('input,button'); f && f.focus(); }
+function closeDrawer() { document.getElementById('drawer').hidden = true; document.getElementById('scrim').hidden = true; }
+function apptDrawer(id) {
+  const a = S.appts.find((x) => x.id === id), s = new Date(a.start), t = typeById(a.type), p = prov(a.pid), st = STATUS[a.status];
+  openDrawer(`<div class="drawer-h"><h2 id="drawerTitle">${esc(a.patient)}</h2><button class="icon-btn" data-act="close" aria-label="Close">${ICONS.x}</button></div>
+    <div class="drawer-b"><div class="chip-row" style="margin:0"><span class="pill ${st[0]}">${st[1]}</span>${a.source === 'online' ? '<span class="pill brand">Booked online</span>' : '<span class="pill mute">Booked by phone</span>'}${a.isNew ? '<span class="pill info">New patient</span>' : ''}</div>
+      <div class="summary" style="margin:0"><div><span>Visit</span><b>${t.name}</b></div><div><span>Dentist</span><b>${esc(p.name)}</b></div><div><span>When</span><b class="tnum">${fmtLong(s)}, ${fmtTime(s)}</b></div><div><span>Length</span><b class="tnum">${a.dur} min</b></div><div><span>Clinic</span><b>${clinicById(a.clinic).name}</b></div><div><span>Booking fee</span><b>${a.paid ? '€' + FEE + ' paid online' : typeById(a.type).fee ? 'To pay at the clinic' : 'None'}</b></div></div>
+      <div><div class="label" style="margin-bottom:8px">Messages</div><div class="bubble" style="font-size:13.5px">Confirmation sent by text and email${a.status === 'confirmed' ? '. Patient replied C to confirm.' : '. Waiting for the patient to confirm.'}</div></div></div>
+    <div class="drawer-f">${a.status === 'confirmed' || a.status === 'unconfirmed' ? `<button class="btn" data-act="setst" data-id="${a.id}" data-s="checked-in">Check in</button>` : ''}${a.status === 'unconfirmed' ? `<button class="btn ghost" data-act="setst" data-id="${a.id}" data-s="confirmed">Mark confirmed</button>` : ''}${a.status === 'checked-in' ? `<button class="btn" data-act="setst" data-id="${a.id}" data-s="completed">Complete visit</button>` : ''}${['confirmed', 'unconfirmed'].includes(a.status) ? `<button class="btn ghost" data-act="setst" data-id="${a.id}" data-s="no-show">No-show</button><button class="btn ghost" data-act="setst" data-id="${a.id}" data-s="cancelled">Cancel visit</button>` : ''}</div>`);
+}
+
+/* ---------- toast ---------- */
+let tt; function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => (t.hidden = true), 2600); }
+
+/* ===================== events ===================== */
+document.addEventListener('click', (e) => {
+  const tab = e.target.closest('.tab'); if (tab) { location.hash = tab.dataset.view; return; }
+  if (e.target.id === 'scrim') { closeDrawer(); return; }
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const act = el.dataset.act, b = UI.b;
+  switch (act) {
+    case 'clinic': UI.b = { clinic: el.dataset.id }; UI.step = 1; renderBooking(); break;
+    case 'type': b.type = el.dataset.id; b.pid = null; b.day = null; b.m = null; UI.step = 2; renderBooking(); break;
+    case 'prov': b.pid = el.dataset.id || null; b.day = null; b.m = null; UI.step = 3; renderBooking(); break;
+    case 'day': b.day = new Date(+el.dataset.t); b.m = null; renderBooking(); break;
+    case 'slot': b.m = +el.dataset.m; b.slotPid = el.dataset.pid; renderBooking(); break;
+    case 'next': if (b.m != null) { UI.step = 4; renderBooking(); } break;
+    case 'back': if (UI.step === 4) readForm(); UI.step = Math.max(0, UI.step - 1); renderBooking(); break;
+    case 'kind': readForm(); b.d.kind = el.dataset.k; renderBooking(); break;
+    case 'sample': { const f = pick(FIRST), l = pick(LAST); Object.assign(b.d, { first: f, last: l, phone: '79' + (20 + Math.floor(rnd() * 79)) + ' ' + (1000 + Math.floor(rnd() * 8999)), email: (f + '.' + l).toLowerCase() + '@example.com' }); renderBooking(); break; }
+    case 'confirm': details(); break;
+    case 'pay': book(true); toast('€' + FEE + ' booking fee paid (demo)'); break;
+    case 'again': UI.b = {}; UI.step = 0; renderBooking(); break;
+    case 'todesk': location.hash = 'front-desk'; break;
+    case 'phone': UI.phone = el.dataset.v === '1'; renderBooking(); break;
+    case 'dprev': case 'dnext': { let d = addDays(UI.desk.day, act === 'dprev' ? -1 : 1); if (!hours(d, UI.desk.clinic)) d = addDays(d, act === 'dprev' ? -1 : 1); UI.desk.day = d; renderDesk(); break; }
+    case 'dclinic': UI.desk.clinic = el.dataset.id; if (!hours(UI.desk.day, UI.desk.clinic)) UI.desk.day = addDays(UI.desk.day, 1); renderDesk(); break;
+    case 'dtoday': UI.desk.day = new Date(today0); renderDesk(); break;
+    case 'dtab': UI.desk.tab = el.dataset.t; renderDesk(); break;
+    case 'appt': apptDrawer(el.dataset.id); break;
+    case 'setst': { const a = S.appts.find((x) => x.id === el.dataset.id); a.status = el.dataset.s; S.feed.unshift({ id: 'f' + Date.now(), icon: el.dataset.s === 'checked-in' ? 'user' : 'check', text: `<b>${esc(a.patient)}</b> ${STATUS[a.status][1].toLowerCase()}`, at: Date.now() }); closeDrawer(); renderDesk(); toast(a.patient + ': ' + STATUS[a.status][1]); break; }
+    case 'recall': { const r = S.recalls.find((x) => x.id === el.dataset.id); r.status = 'sent'; S.feed.unshift({ id: 'f' + Date.now(), icon: 'msg', text: `Recall text sent to <b>${esc(r.patient)}</b>`, at: Date.now() }); renderDesk(); toast('Recall text sent to ' + r.patient); break; }
+    case 'recall-all': { let n = 0; S.recalls.forEach((r) => { if (r.status === 'due') { r.status = 'sent'; n++; } }); S.feed.unshift({ id: 'f' + Date.now(), icon: 'msg', text: `Recall texts sent to <b>${n} patients</b>`, at: Date.now() }); renderDesk(); toast(`Recall texts sent to ${n} patients`); break; }
+    case 'close': closeDrawer(); break;
+    case 'resetdemo': seedData(); UI.b = {}; UI.step = 0; UI.desk = { tab: 'schedule', day: new Date(today0), fresh: null, clinic: 'tp' }; closeDrawer(); setView(UI.view); toast('Demo reset'); break;
+  }
+});
+document.addEventListener('change', (e) => {
+  if (e.target.dataset && e.target.dataset.act === 'rem') { const r = S.reminders.find((x) => x.id === e.target.dataset.id); r.on = e.target.checked; toast(r.when + ' reminder ' + (r.on ? 'on' : 'off')); }
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !document.getElementById('drawer').hidden) closeDrawer(); });
+
+/* ===================== start ===================== */
+seedData(); applyBrand(); setView(location.hash.slice(1) || 'booking');
+setInterval(() => { if (UI.view === 'front-desk' && UI.desk.tab === 'schedule' && document.getElementById('drawer').hidden) { const y = window.scrollY; renderDesk(); window.scrollTo(0, y); } }, 60000);
+</script>
+
+</body>
+</html>
