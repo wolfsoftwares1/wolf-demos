@@ -156,7 +156,26 @@ main{padding-block:24px 64px}
 .fd-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .fd-top h1{font-size:24px;margin-right:auto}
 .daynav{display:flex;align-items:center;gap:6px}
-.daynav b{min-width:170px;text-align:center;font-family:var(--f-display)}
+.daynav b{text-align:center;font-family:var(--f-display)}
+.cal-wrap{position:relative}
+.cal-btn{display:inline-flex;align-items:center;gap:8px;min-width:200px;justify-content:center;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 14px;font-size:15px}
+.cal-btn:hover,.cal-btn[aria-expanded="true"]{border-color:var(--brand)}
+.cal-btn svg{width:18px;height:18px;color:var(--gold)}
+.cal-btn .caret{font-size:11px;color:var(--muted)}
+.cal-pop{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:40;width:310px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(15,33,64,.18);padding:12px}
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-h .icon-btn{padding:6px 8px}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-w span{font-size:11.5px;color:var(--faint);text-align:center;padding:4px 0;font-weight:600}
+.cal-d{position:relative;border:0;background:none;border-radius:10px;height:38px;font-weight:600;font-variant-numeric:tabular-nums}
+.cal-d:hover:not(:disabled){background:var(--tint)}
+.cal-d:disabled{color:var(--faint);opacity:.5;cursor:default}
+.cal-d.today{box-shadow:inset 0 0 0 1.5px var(--gold)}
+.cal-d[aria-pressed="true"]{background:var(--brand);color:#fff}
+.cal-d i{position:absolute;left:50%;bottom:5px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--gold)}
+.cal-f{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.cal-f span{display:flex;align-items:center;gap:6px}
+@media (max-width:640px){.cal-btn{min-width:0}.cal-pop{position:fixed;top:auto;left:12px;right:12px;width:auto;transform:none;margin-top:8px}}
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
 @media (max-width:860px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .kpi{background:var(--surface-2);border-radius:14px;padding:14px 16px}
@@ -241,7 +260,7 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .note{font-size:13px;color:var(--muted);margin:0}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:12px;font-weight:600;z-index:60;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
 .foot{color:var(--faint);font-size:12.5px;text-align:center;padding-block:10px 28px}
-@media (max-width:640px){.cust-l{display:none}.tabs{order:3;width:100%}.tab{flex:1}.brand-sub{display:none}.daynav b{min-width:0}}
+@media (max-width:640px){.cust-l{display:none}.tabs{order:3;width:100%}.tab{flex:1}.brand-sub{display:none}}
 
 /* ---------- Apex additions ---------- */
 .ribbon{background:var(--brand);color:#F3EBDD;font-size:13px}
@@ -418,7 +437,7 @@ let idc = 1;
 function seedData() {
   seed = 20261031; idc = 1;
   const appts = [];
-  for (let k = -4; k <= 14; k++) {
+  for (let k = -21; k <= 45; k++) {
     const day = addDays(today0, k);
     for (const p of S.settings.providers) {
       const h = hours(day, p.clinic);
@@ -617,8 +636,8 @@ function renderBooking() {
     body = `<div class="done"><span class="done-ic">${ICONS.check}</span><h2>You're booked, ${esc(d.first)}!</h2>
       <p class="note">${typeById(a.type).name} with ${esc(p.name)} · ${c.name}</p>
       <p class="done-when tnum">${fmtLong(when)} · ${fmtTime(when)}</p>${a.paid ? `<p class="note" style="margin-top:6px">€${FEE} booking fee paid · deducted from your final bill</p>` : ''}</div>
-      <div class="sms"><div class="from">Text sent to ${esc(d.phone || 'the patient')}</div><div class="bubble">${sms}</div></div>
       ${prepBlock(a)}
+      <div class="sms" style="margin-top:16px"><div class="from">Text sent to ${esc(d.phone || 'the patient')}</div><div class="bubble">${sms}</div></div>
       <div class="actions"><button class="btn ghost" data-act="again">Book another</button><button class="btn" data-act="todesk">See it on the front desk ${ICONS.right}</button></div>`;
   }
   const total = 7, shown = st;
@@ -698,7 +717,7 @@ function renderDesk() {
       `</ul></div><div class="panel" style="margin-top:16px"><div class="panel-h"><h2>Preview: 2-day reminder</h2></div><div style="padding:16px"><div class="bubble">Apex Dental: Hi Maria, a reminder of your check-up with ${esc(S.settings.providers[2].name)} at Trident Park on ${fmtDay(addDays(today0, 2))} at 10:30. Reply C to confirm or R to reschedule.</div></div></div>`;
   }
   el.innerHTML = `<div class="fd-top"><h1>Front desk</h1><div class="clinic-sw" role="group" aria-label="Clinic">${CLINICS.map((c) => `<button data-act="dclinic" data-id="${c.id}" aria-pressed="${cl === c.id}">${c.short}</button>`).join('')}</div>
-      ${UI.desk.tab === 'schedule' ? `<div class="daynav"><button class="icon-btn" data-act="dprev" aria-label="Previous day">${ICONS.left}</button><b>${isToday ? 'Today' : fmtDay(day)}</b><button class="icon-btn" data-act="dnext" aria-label="Next day">${ICONS.right}</button>${isToday ? '' : '<button class="btn sm ghost" data-act="dtoday">Today</button>'}</div>` : ''}</div>
+      ${UI.desk.tab === 'schedule' ? `<div class="daynav"><button class="icon-btn" data-act="dprev" aria-label="Previous day">${ICONS.left}</button><span class="cal-wrap"><button class="cal-btn" data-act="calopen" aria-haspopup="dialog" aria-expanded="${!!UI.desk.cal}">${ICONS.cal}<b>${isToday ? 'Today, ' + fmtDay(day) : fmtDay(day)}</b><span aria-hidden="true" class="caret">▾</span></button>${UI.desk.cal ? calPop() : ''}</span><button class="icon-btn" data-act="dnext" aria-label="Next day">${ICONS.right}</button>${isToday ? '' : '<button class="btn sm ghost" data-act="dtoday">Today</button>'}</div>` : ''}</div>
     <div class="sample-note"><b>Sample day, fictional patients.</b> A few example visits show how a normal day looks${UI.desk.fresh ? '. The appointment you just booked is highlighted' : '. Book an appointment on the Patient booking tab and it appears here instantly'}.</div>
     <div class="kpis">
       <div class="kpi"><small>Visits ${isToday ? 'today' : 'this day'}</small><b>${dayAppts.length}</b><i>${dayAppts.filter((a) => a.status === 'checked-in').length} checked in now</i></div>
@@ -714,6 +733,21 @@ function renderDesk() {
   if (UI.desk.fresh && UI.desk.tab === 'schedule' && !UI.desk.scrolled) {
     const f = el.querySelector('.appt.fresh'); if (f) { UI.desk.scrolled = true; setTimeout(() => f.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120); }
   }
+}
+function calPop() {
+  const m = UI.desk.cal.month, first = new Date(m.getFullYear(), m.getMonth(), 1);
+  const lead = (first.getDay() + 6) % 7; // weeks start on Monday
+  const n = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < lead; i++) cells.push('<span></span>');
+  for (let d = 1; d <= n; d++) {
+    const day = new Date(m.getFullYear(), m.getMonth(), d), open = !!hours(day, UI.desk.clinic);
+    const count = S.appts.filter((a) => a.clinic === UI.desk.clinic && a.status !== 'cancelled' && sameDay(new Date(a.start), day)).length;
+    cells.push(`<button class="cal-d${sameDay(day, today0) ? ' today' : ''}" data-act="calpick" data-t="${day.getTime()}" aria-pressed="${sameDay(day, UI.desk.day)}" ${open ? '' : 'disabled'} aria-label="${fmtLong(day)}${open ? ', ' + count + ' visits' : ', closed'}">${d}${count ? '<i></i>' : ''}</button>`);
+  }
+  return `<div class="cal-pop" role="dialog" aria-label="Choose a date"><div class="cal-h"><button class="icon-btn" data-act="calmonth" data-d="-1" aria-label="Previous month">${ICONS.left}</button><b>${m.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</b><button class="icon-btn" data-act="calmonth" data-d="1" aria-label="Next month">${ICONS.right}</button></div>
+    <div class="cal-g cal-w">${['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((w) => `<span>${w}</span>`).join('')}</div><div class="cal-g">${cells.join('')}</div>
+    <div class="cal-f"><span><i class="dot" style="background:var(--gold)"></i>Has visits</span><button class="btn sm ghost" data-act="calpick" data-t="${today0.getTime()}">Today</button></div></div>`;
 }
 const ago = (t) => { const m = Math.max(0, Math.round((Date.now() - t) / 6e4)); return m < 1 ? 'Just now' : m < 60 ? m + ' min ago' : Math.round(m / 60) + ' h ago'; };
 
@@ -737,6 +771,7 @@ let tt; function toast(m) { const t = document.getElementById('toast'); t.textCo
 document.addEventListener('click', (e) => {
   const tab = e.target.closest('.tab'); if (tab) { location.hash = tab.dataset.view; return; }
   if (e.target.id === 'scrim') { closeDrawer(); return; }
+  if (UI.desk.cal && !e.target.closest('.cal-wrap')) { UI.desk.cal = null; renderDesk(); }
   const el = e.target.closest('[data-act]'); if (!el) return;
   const act = el.dataset.act, b = UI.b;
   switch (act) {
@@ -760,7 +795,10 @@ document.addEventListener('click', (e) => {
     case 'phone': UI.phone = el.dataset.v === '1'; renderBooking(); break;
     case 'dprev': case 'dnext': { let d = addDays(UI.desk.day, act === 'dprev' ? -1 : 1); if (!hours(d, UI.desk.clinic)) d = addDays(d, act === 'dprev' ? -1 : 1); UI.desk.day = d; renderDesk(); break; }
     case 'dclinic': UI.desk.clinic = el.dataset.id; if (!hours(UI.desk.day, UI.desk.clinic)) UI.desk.day = addDays(UI.desk.day, 1); renderDesk(); break;
-    case 'dtoday': UI.desk.day = new Date(today0); renderDesk(); break;
+    case 'dtoday': UI.desk.day = new Date(today0); UI.desk.cal = null; renderDesk(); break;
+    case 'calopen': UI.desk.cal = UI.desk.cal ? null : { month: new Date(UI.desk.day.getFullYear(), UI.desk.day.getMonth(), 1) }; renderDesk(); break;
+    case 'calmonth': { const m = UI.desk.cal.month; UI.desk.cal.month = new Date(m.getFullYear(), m.getMonth() + +el.dataset.d, 1); renderDesk(); break; }
+    case 'calpick': UI.desk.day = new Date(+el.dataset.t); UI.desk.cal = null; renderDesk(); break;
     case 'dtab': UI.desk.tab = el.dataset.t; renderDesk(); break;
     case 'appt': apptDrawer(el.dataset.id); break;
     case 'setst': { const a = S.appts.find((x) => x.id === el.dataset.id); a.status = el.dataset.s; S.feed.unshift({ id: 'f' + Date.now(), icon: el.dataset.s === 'checked-in' ? 'user' : 'check', text: `<b>${esc(a.patient)}</b> ${STATUS[a.status][1].toLowerCase()}`, at: Date.now() }); closeDrawer(); renderDesk(); toast(a.patient + ': ' + STATUS[a.status][1]); break; }
@@ -773,11 +811,11 @@ document.addEventListener('click', (e) => {
 document.addEventListener('change', (e) => {
   if (e.target.dataset && e.target.dataset.act === 'rem') { const r = S.reminders.find((x) => x.id === e.target.dataset.id); r.on = e.target.checked; toast(r.when + ' reminder ' + (r.on ? 'on' : 'off')); }
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !document.getElementById('drawer').hidden) closeDrawer(); });
+document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (UI.desk.cal) { UI.desk.cal = null; renderDesk(); } else if (!document.getElementById('drawer').hidden) closeDrawer(); });
 
 /* ===================== start ===================== */
 seedData(); applyBrand(); setView(location.hash.slice(1) || 'booking');
-setInterval(() => { if (UI.view === 'front-desk' && UI.desk.tab === 'schedule' && document.getElementById('drawer').hidden) { const y = window.scrollY; renderDesk(); window.scrollTo(0, y); } }, 60000);
+setInterval(() => { if (UI.view === 'front-desk' && UI.desk.tab === 'schedule' && !UI.desk.cal && document.getElementById('drawer').hidden) { const y = window.scrollY; renderDesk(); window.scrollTo(0, y); } }, 60000);
 </script>
 
 </body>
