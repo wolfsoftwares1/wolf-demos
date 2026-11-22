@@ -269,6 +269,21 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 @media (max-width:640px){.apex-logo{height:30px}}
 .sample-note{margin:0 0 14px;padding:10px 14px;border-radius:12px;background:#F6EEDD;color:#5C4319;font-size:14px}
 .sample-note b{color:#3E2C0E}
+.prep-card{scroll-margin-top:110px;margin-top:16px;border:1px solid color-mix(in srgb,var(--gold) 45%,#fff);background:#FBF7EF;border-radius:14px;padding:16px}
+.prep-card h3{font-size:17px;margin:0 0 4px}
+.prep-card p{margin:0 0 12px;font-size:14px;color:var(--muted)}
+.prep-q .bk-q{margin-bottom:4px}.prep-q .note{margin:0 0 12px}
+.prep-q .opt[aria-pressed="true"]{border-color:var(--brand);background:var(--tint-2)}
+.prep-q .opt .tick{margin-left:auto;width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line);display:grid;place-items:center;flex:none;color:#fff}
+.prep-q .opt[aria-pressed="true"] .tick{background:var(--brand);border-color:var(--brand)}
+.prep-q .opt .tick svg{width:14px;height:14px}
+.prep-sum{display:grid;gap:6px;margin:10px 0 0;font-size:14px}
+.prep-sum div{display:grid;grid-template-columns:150px 1fr;gap:10px}
+.prep-sum span{color:var(--muted)}
+.prep-ask{margin:12px 0 0;padding-left:18px;font-size:14px}
+.prep-ask li+li{margin-top:4px}
+@media (max-width:520px){.prep-sum div{grid-template-columns:1fr;gap:0}}
+
 h1,h2,h3,h4{font-weight:600}
 </style>
 </head>
@@ -329,6 +344,32 @@ const CLINICS = [
   { id:'sa', name:"St Anne's Clinic", sub:'Level 3, Triq Kanonku Karm Pirotta', short:"St Anne's" },
 ];
 const clinicById = (id) => CLINICS.find((c) => c.id === id);
+const PREP = [
+  { key:'reason', type:'single', title:"What's bringing you in?", hint:'Pick the closest one.', options:[['pain','Pain or discomfort','A tooth, a gum, or the jaw'],['broken','A broken or missing tooth','Including a lost filling, crown or denture'],['look','How my teeth look','Colour, shape, gaps, chips'],['straight','Crooked or crowded teeth','Braces or clear aligners'],['routine','A check-up and clean','Nothing wrong that I know of'],['unsure',"I'm not sure","Something feels off and I'd like it looked at"]] },
+  { key:'timing', type:'single', title:'How long has this been going on?', hint:'A rough answer is fine.', options:[['now',"It's a problem right now",'Pain, swelling or damage today'],['weeks','Days or weeks'],['months','Months'],['years','A year or more'],['na','Not applicable']] },
+  { key:'priorities', type:'multi', title:'What matters most to you?', hint:'Choose as many as apply.', options:[['cost','Knowing the cost up front'],['speed','Getting it sorted quickly'],['look','How it will look'],['keep','Keeping my own teeth if possible'],['nosurg',"Avoiding surgery if there's a choice"],['time','As few appointments as possible'],['comfort','Not being in pain during treatment']] },
+  { key:'context', type:'multi', title:'Anything we should know before you sit down?', hint:'Knowing these first changes how we plan the appointment.', options:[['anxious',"I'm anxious about dentists"],['badpast',"I've had a bad experience before"],['meds','I take regular medication'],['medical','I have a medical condition'],['grind','I grind or clench my teeth'],['smoke','I smoke or vape'],['preg',"I'm pregnant or breastfeeding"],['none','None of these']] },
+  { key:'lastvisit', type:'single', title:'When did you last see a dentist?', hint:'No wrong answer. It only tells us how much time to leave.', options:[['6m','Within the last 6 months'],['2y','1 to 2 years ago'],['5y','Several years ago'],['long',"I honestly can't remember"]] },
+];
+const ASK = {
+  pain:['What is actually causing the pain?','What will settle the pain today, and what is the longer-term fix?','What happens if I leave it as it is?'],
+  broken:['What are my options for replacing or repairing this?','How long does the whole process take from start to finish?','What is the total cost including every stage?'],
+  look:['What is realistically achievable with my teeth?','How long do the results last, and what maintenance do they need?','Can I see photographs of cases similar to mine?'],
+  straight:['Which approach suits my case, and why?','How long will treatment take, and how often would I come in?','What is the total cost including retainers and reviews?'],
+  routine:['How is my gum health?',"Is there anything you're watching that isn't a problem yet?",'Is there anything I should change in how I clean at home?'],
+  unsure:['What did you find on examination?','What needs attention now, and what can safely wait?','If it were you, what would you do first?'],
+};
+const optLabel = (key, v) => (PREP.find((q) => q.key === key).options.find((o) => o[0] === v) || [, v])[1];
+function prepSummary(q) { // short lines for the dentist
+  if (!q || !q.reason) return [];
+  const out = [['Reason', optLabel('reason', q.reason)]];
+  if (q.timing && q.timing !== 'na') out.push(['How long', optLabel('timing', q.timing)]);
+  if (q.priorities?.length) out.push(['Matters most', q.priorities.map((v) => optLabel('priorities', v)).join(', ')]);
+  const ctx = (q.context || []).filter((v) => v !== 'none');
+  if (ctx.length) out.push(['Before they sit down', ctx.map((v) => optLabel('context', v)).join(', ')]);
+  if (q.lastvisit) out.push(['Last dental visit', optLabel('lastvisit', q.lastvisit)]);
+  return out;
+}
 const DEFAULT_SETTINGS = {
   name:'Apex Dental', city:'Birkirkara, Malta', phone:'7985 4037', color:'#0F2140', logo:'',
   providers:[
@@ -402,6 +443,8 @@ function seedData() {
       }
     }
   }
+  const sampleReasons = { newpt: ['unsure', 'routine', 'look'], implant: ['broken'], emerg: ['pain'], align: ['straight'], cosm: ['look'] };
+  appts.forEach((a) => { const rs = sampleReasons[a.type]; if (rs && rnd() < .55) a.prep = { reason: pick(rs), timing: pick(['weeks', 'months', 'years']), priorities: [pick(['cost', 'speed', 'keep', 'comfort'])], context: [pick(['anxious', 'none', 'meds', 'grind'])], lastvisit: pick(['2y', '5y', '6m']) }; });
   S.appts = appts;
   const now = Date.now();
   const recent = appts.filter((a) => a.source === 'online' && a.start > now).slice(0, 4);
@@ -482,9 +525,28 @@ const HOW = [
   { t: 'Only real free times', d: 'Times come straight from the live schedule. Existing visits and short-notice times are hidden, and on Sundays only emergency times show.' },
   { t: 'Details', d: 'New and returning patients give the details the front desk needs, and choose English or Italian messages.' },
   { t: 'The €20 booking fee, paid online', d: 'For new-patient, emergency and longer visits the fee is paid by card while booking, then deducted from the final bill. No chasing.' },
-  { t: 'Booked and confirmed instantly', d: 'No waiting for a reply: the visit lands on the front desk schedule straight away, and the patient gets a text and an email.' },
+  { t: 'Booked and confirmed instantly', d: 'No waiting for a reply. The visit lands on the front desk straight away, and your "Get more out of your first appointment" questions are saved to it, so the dentist sees the answers before the patient arrives.' },
 ];
 function feeDue(b) { return !!typeById(b.type)?.fee; }
+function toPrep() { const c = document.querySelector('.prep-card'); if (c && c.getBoundingClientRect().top < 100) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+function prepBlock(a) {
+  const b = UI.b;
+  if (b.prepStep == null && !a.prep) return `<div class="prep-card"><h3>Get more out of your first appointment</h3><p>Five quick questions, about a minute. Your answers are saved to this appointment, so ${esc(prov(a.pid).name)} has them from the first minute. No need to send anything on WhatsApp.</p><button class="btn" data-act="prepstart">Answer the questions</button></div>`;
+  if (a.prep && b.prepStep == null) {
+    const asks = ASK[a.prep.reason] || [];
+    return `<div class="prep-card"><h3>Saved to your appointment ✓</h3><p>${esc(prov(a.pid).name)} will see this before you arrive. It is not a diagnosis and it doesn't replace an examination.</p>
+      <div class="prep-sum">${prepSummary(a.prep).map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>
+      ${asks.length ? `<div class="label" style="margin-top:14px">Questions worth asking</div><ul class="prep-ask">${asks.map((q) => `<li>${q}</li>`).join('')}</ul>` : ''}</div>`;
+  }
+  const q = PREP[b.prepStep], ans = b.prep || (b.prep = {});
+  const cur = ans[q.key];
+  const on = (v) => q.type === 'multi' ? (cur || []).includes(v) : cur === v;
+  const ok = q.type === 'multi' ? (cur || []).length > 0 : !!cur;
+  const last = b.prepStep === PREP.length - 1;
+  return `<div class="prep-card prep-q"><div class="label" style="margin-bottom:6px">Question ${b.prepStep + 1} of ${PREP.length}</div><p class="bk-q">${q.title}</p><p class="note">${q.hint}</p>
+    <div class="opts">${q.options.map(([v, l, n]) => `<button class="opt" data-act="prepopt" data-v="${v}" aria-pressed="${on(v)}"><span style="min-width:0"><b>${l}</b>${n ? `<small>${n}</small>` : ''}</span>${q.type === 'multi' ? `<span class="tick">${ICONS.check}</span>` : ''}</button>`).join('')}</div>
+    <div class="actions">${b.prepStep > 0 ? '<button class="btn ghost" data-act="prepback">Back</button>' : '<span></span>'}<button class="btn" data-act="prepnext" ${ok ? '' : 'disabled'}>${last ? 'Save to my appointment' : 'Next'}</button></div></div>`;
+}
 function renderBooking() {
   const st = UI.step, b = UI.b, el = document.getElementById('v-booking');
   // steps: 0 clinic, 1 visit, 2 dentist, 3 time, 4 details, 5 pay (fee visits only), 6 booked
@@ -556,6 +618,7 @@ function renderBooking() {
       <p class="note">${typeById(a.type).name} with ${esc(p.name)} · ${c.name}</p>
       <p class="done-when tnum">${fmtLong(when)} · ${fmtTime(when)}</p>${a.paid ? `<p class="note" style="margin-top:6px">€${FEE} booking fee paid · deducted from your final bill</p>` : ''}</div>
       <div class="sms"><div class="from">Text sent to ${esc(d.phone || 'the patient')}</div><div class="bubble">${sms}</div></div>
+      ${prepBlock(a)}
       <div class="actions"><button class="btn ghost" data-act="again">Book another</button><button class="btn" data-act="todesk">See it on the front desk ${ICONS.right}</button></div>`;
   }
   const total = 7, shown = st;
@@ -617,11 +680,11 @@ function renderDesk() {
             <div class="tcol">${ticks.join('')}</div>
             ${ps.map((p) => `<div class="pcol">${h.lunch ? `<div class="lunch" style="top:${(h.lunch[0] - top) * PX}px;height:${(h.lunch[1] - h.lunch[0]) * PX}px">Lunch</div>` : ''}${dayAppts.filter((a) => a.pid === p.id).map((a) => {
               const s = new Date(a.start), t = typeById(a.type), y = (minOf(s) - top) * PX, hh = a.dur * PX - 3;
-              return `<button class="appt st-${a.status} ${UI.desk.fresh === a.id ? 'fresh' : ''}" style="top:${y}px;height:${hh}px;--c:${t.color}" data-act="appt" data-id="${a.id}" aria-label="${esc(a.patient)}, ${t.name}, ${fmtTime(s)}"><span class="tags">${a.source === 'online' ? '<span class="dot" title="Booked online" style="background:var(--brand)"></span>' : ''}${a.isNew ? '<span class="dot" title="New patient" style="background:#2563EB"></span>' : ''}${a.paid ? '<span class="dot" title="Booking fee paid" style="background:var(--gold)"></span>' : ''}</span><b>${esc(a.patient)}</b>${hh > 34 ? `<small class="tnum">${fmtTime(s)} · ${t.name}</small>` : ''}${hh > 56 ? `<small>${STATUS[a.status][1]}</small>` : ''}</button>`;
+              return `<button class="appt st-${a.status} ${UI.desk.fresh === a.id ? 'fresh' : ''}" style="top:${y}px;height:${hh}px;--c:${t.color}" data-act="appt" data-id="${a.id}" aria-label="${esc(a.patient)}, ${t.name}, ${fmtTime(s)}"><span class="tags">${a.source === 'online' ? '<span class="dot" title="Booked online" style="background:var(--brand)"></span>' : ''}${a.isNew ? '<span class="dot" title="New patient" style="background:#2563EB"></span>' : ''}${a.paid ? '<span class="dot" title="Booking fee paid" style="background:var(--gold)"></span>' : ''}${a.prep ? '<span class="dot" title="Pre-visit answers in" style="background:#15803D"></span>' : ''}</span><b>${esc(a.patient)}</b>${hh > 34 ? `<small class="tnum">${fmtTime(s)} · ${t.name}</small>` : ''}${hh > 56 ? `<small>${STATUS[a.status][1]}</small>` : ''}</button>`;
             }).join('')}</div>`).join('')}
             ${nowLine}
           </div></div></div>
-        <div class="legend"><span><i class="dot" style="background:var(--brand)"></i>Booked online</span><span><i class="dot" style="background:#2563EB"></i>New patient</span><span><i class="dot" style="background:var(--gold)"></i>€${FEE} fee paid online</span></div></div>
+        <div class="legend"><span><i class="dot" style="background:var(--brand)"></i>Booked online</span><span><i class="dot" style="background:#2563EB"></i>New patient</span><span><i class="dot" style="background:var(--gold)"></i>€${FEE} fee paid online</span><span><i class="dot" style="background:#15803D"></i>Pre-visit answers in</span></div></div>
         <div class="panel"><div class="panel-h"><h2>Live activity</h2><span class="pill ok">Live</span></div><ul class="feed">${S.feed.slice(0, 7).map((f) => `<li class="${f.fresh ? 'fresh' : ''}"><span class="fi">${ICONS[f.icon]}</span><span>${f.text}<time>${ago(f.at)}</time></span></li>`).join('')}</ul></div></div>`;
     }
   } else if (UI.desk.tab === 'recalls') {
@@ -662,6 +725,7 @@ function apptDrawer(id) {
   openDrawer(`<div class="drawer-h"><h2 id="drawerTitle">${esc(a.patient)}</h2><button class="icon-btn" data-act="close" aria-label="Close">${ICONS.x}</button></div>
     <div class="drawer-b"><div class="chip-row" style="margin:0"><span class="pill ${st[0]}">${st[1]}</span>${a.source === 'online' ? '<span class="pill brand">Booked online</span>' : '<span class="pill mute">Booked by phone</span>'}${a.isNew ? '<span class="pill info">New patient</span>' : ''}</div>
       <div class="summary" style="margin:0"><div><span>Visit</span><b>${t.name}</b></div><div><span>Dentist</span><b>${esc(p.name)}</b></div><div><span>When</span><b class="tnum">${fmtLong(s)}, ${fmtTime(s)}</b></div><div><span>Length</span><b class="tnum">${a.dur} min</b></div><div><span>Clinic</span><b>${clinicById(a.clinic).name}</b></div><div><span>Booking fee</span><b>${a.paid ? '€' + FEE + ' paid online' : typeById(a.type).fee ? 'To pay at the clinic' : 'None'}</b></div></div>
+      ${a.prep ? `<div><div class="label" style="margin-bottom:8px">Pre-visit answers from the patient</div><div class="prep-sum" style="margin:0">${prepSummary(a.prep).map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div></div>` : (a.isNew ? `<div><div class="label" style="margin-bottom:8px">Pre-visit answers</div><p class="note">Not answered yet. The patient gets a reminder link with their confirmation.</p></div>` : '')}
       <div><div class="label" style="margin-bottom:8px">Messages</div><div class="bubble" style="font-size:13.5px">Confirmation sent by text and email${a.status === 'confirmed' ? '. Patient replied C to confirm.' : '. Waiting for the patient to confirm.'}</div></div></div>
     <div class="drawer-f">${a.status === 'confirmed' || a.status === 'unconfirmed' ? `<button class="btn" data-act="setst" data-id="${a.id}" data-s="checked-in">Check in</button>` : ''}${a.status === 'unconfirmed' ? `<button class="btn ghost" data-act="setst" data-id="${a.id}" data-s="confirmed">Mark confirmed</button>` : ''}${a.status === 'checked-in' ? `<button class="btn" data-act="setst" data-id="${a.id}" data-s="completed">Complete visit</button>` : ''}${['confirmed', 'unconfirmed'].includes(a.status) ? `<button class="btn ghost" data-act="setst" data-id="${a.id}" data-s="no-show">No-show</button><button class="btn ghost" data-act="setst" data-id="${a.id}" data-s="cancelled">Cancel visit</button>` : ''}</div>`);
 }
@@ -686,6 +750,10 @@ document.addEventListener('click', (e) => {
     case 'kind': readForm(); b.d.kind = el.dataset.k; renderBooking(); break;
     case 'sample': { const f = pick(FIRST), l = pick(LAST); Object.assign(b.d, { first: f, last: l, phone: '79' + (20 + Math.floor(rnd() * 79)) + ' ' + (1000 + Math.floor(rnd() * 8999)), email: (f + '.' + l).toLowerCase() + '@example.com' }); renderBooking(); break; }
     case 'confirm': details(); break;
+    case 'prepstart': b.prepStep = 0; b.prep = {}; renderBooking(); toPrep(); break;
+    case 'prepopt': { const q = PREP[b.prepStep], v = el.dataset.v; if (q.type === 'multi') { let arr = (b.prep[q.key] || []).slice(); if (v === 'none') arr = arr.includes('none') ? [] : ['none']; else { arr = arr.filter((x) => x !== 'none'); arr = arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]; } b.prep[q.key] = arr; } else b.prep[q.key] = v; renderBooking(); break; }
+    case 'prepback': b.prepStep = Math.max(0, b.prepStep - 1); renderBooking(); toPrep(); break;
+    case 'prepnext': if (b.prepStep < PREP.length - 1) { b.prepStep++; renderBooking(); toPrep(); } else { const a = S.appts.find((x) => x.id === b.bookedId); a.prep = b.prep; b.prepStep = null; S.feed.unshift({ id: 'fp' + a.id, icon: 'clip', text: `<b>${esc(a.patient)}</b> answered the pre-visit questions for their appointment`, at: Date.now(), fresh: true }); renderBooking(); toast('Saved to the appointment'); } break;
     case 'pay': book(true); toast('€' + FEE + ' booking fee paid (demo)'); break;
     case 'again': UI.b = {}; UI.step = 0; renderBooking(); break;
     case 'todesk': location.hash = 'front-desk'; break;
