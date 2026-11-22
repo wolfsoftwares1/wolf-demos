@@ -267,6 +267,8 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .fd-top{flex-wrap:wrap;gap:12px}
 .apex-logo{height:40px;width:auto;flex:none}
 @media (max-width:640px){.apex-logo{height:30px}}
+.sample-note{margin:0 0 14px;padding:10px 14px;border-radius:12px;background:#F6EEDD;color:#5C4319;font-size:14px}
+.sample-note b{color:#3E2C0E}
 </style>
 </head>
 <body>
@@ -382,7 +384,7 @@ function seedData() {
       let m = h.open + (rnd() < .5 ? 0 : 30);
       while (m < h.close) {
         if (h.lunch && m >= h.lunch[0] && m < h.lunch[1]) { m = h.lunch[1]; continue; }
-        const fill = k < 0 ? .78 : k === 0 ? .72 : Math.max(.25, .7 - k * .035);
+        const fill = k < 0 ? .2 : k === 0 ? .18 : Math.max(.05, .16 - k * .015);
         if (rnd() < fill) {
           const t = typeById(pick(p.types.filter((x) => x !== 'emerg').concat(p.types.includes('hyg') ? ['hyg', 'hyg'] : [])));
           const dur = t.dur;
@@ -404,7 +406,7 @@ function seedData() {
   const recent = appts.filter((a) => a.source === 'online' && a.start > now).slice(0, 4);
   S.feed = [
     ...recent.map((a, i) => ({ id: 'f' + i, icon: 'cal', text: `<b>${a.patient}</b> booked <b>${typeById(a.type).name}</b> online at ${clinicById(a.clinic).short} for ${fmtDay(new Date(a.start))}, ${fmtTime(new Date(a.start))}${typeById(a.type).fee ? ' · €' + FEE + ' fee paid' : ''}`, at: now - (i * 47 + 12) * 6e4 })),
-    { id: 'fr1', icon: 'msg', text: `Reminder texts sent to <b>23 patients</b> for tomorrow`, at: now - 95 * 6e4 },
+    { id: 'fr1', icon: 'msg', text: `Reminder texts sent to <b>9 patients</b> for tomorrow`, at: now - 95 * 6e4 },
     { id: 'fr2', icon: 'check', text: `<b>${pname()}</b> confirmed by text (replied C)`, at: now - 130 * 6e4 },
     { id: 'fr3', icon: 'user', text: `<b>${pname()}</b> completed the medical history form online`, at: now - 190 * 6e4 },
   ].sort((a, b) => b.at - a.at);
@@ -633,6 +635,7 @@ function renderDesk() {
   }
   el.innerHTML = `<div class="fd-top"><h1>Front desk</h1><div class="clinic-sw" role="group" aria-label="Clinic">${CLINICS.map((c) => `<button data-act="dclinic" data-id="${c.id}" aria-pressed="${cl === c.id}">${c.short}</button>`).join('')}</div>
       ${UI.desk.tab === 'schedule' ? `<div class="daynav"><button class="icon-btn" data-act="dprev" aria-label="Previous day">${ICONS.left}</button><b>${isToday ? 'Today' : fmtDay(day)}</b><button class="icon-btn" data-act="dnext" aria-label="Next day">${ICONS.right}</button>${isToday ? '' : '<button class="btn sm ghost" data-act="dtoday">Today</button>'}</div>` : ''}</div>
+    <div class="sample-note"><b>Sample day, fictional patients.</b> A few example visits show how a normal day looks${UI.desk.fresh ? '. The appointment you just booked is highlighted' : '. Book an appointment on the Patient booking tab and it appears here instantly'}.</div>
     <div class="kpis">
       <div class="kpi"><small>Visits ${isToday ? 'today' : 'this day'}</small><b>${dayAppts.length}</b><i>${dayAppts.filter((a) => a.status === 'checked-in').length} checked in now</i></div>
       <div class="kpi"><small>Booked online this week</small><b>${onlineWeek}</b><i>No phone call or WhatsApp needed</i></div>
