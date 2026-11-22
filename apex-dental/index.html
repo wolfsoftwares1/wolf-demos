@@ -542,19 +542,24 @@ const HOW = [
   { t: 'Patients choose the visit', d: 'Each visit type has its own length, so the schedule never overbooks a chair.' },
   { t: 'Any dentist or a favourite', d: 'Patients can pick a dentist or take the first free time. Each dentist only shows the visits they do.' },
   { t: 'Only real free times', d: 'Times come straight from the live schedule. Existing visits and short-notice times are hidden, and on Sundays only emergency times show.' },
-  { t: 'Details', d: 'New and returning patients give the details the front desk needs, and choose English or Italian messages.' },
+  { t: 'Details, then your own pre-visit questions', d: 'Patients give their details, then can answer your "Get more out of your first appointment" questions in about a minute. It is optional, so nobody drops out of booking.' },
   { t: 'The €20 booking fee, paid online', d: 'For new-patient, emergency and longer visits the fee is paid by card while booking, then deducted from the final bill. No chasing.' },
-  { t: 'Booked and confirmed instantly', d: 'No waiting for a reply. The visit lands on the front desk straight away, and your "Get more out of your first appointment" questions are saved to it, so the dentist sees the answers before the patient arrives.' },
+  { t: 'Booked and confirmed instantly', d: 'No waiting for a reply. The visit and the patient\'s answers land on the front desk straight away, so the dentist sees them before the patient arrives.' },
 ];
 function feeDue(b) { return !!typeById(b.type)?.fee; }
 function toPrep() { const c = document.querySelector('.prep-card'); if (c && c.getBoundingClientRect().top < 100) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
-function prepBlock(a) {
-  const b = UI.b;
-  if (b.prepStep == null && !a.prep) return `<div class="prep-card"><h3>Get more out of your first appointment</h3><p>Five quick questions, about a minute. Your answers are saved to this appointment, so ${esc(prov(a.pid).name)} has them from the first minute. No need to send anything on WhatsApp.</p><button class="btn" data-act="prepstart">Answer the questions</button></div>`;
-  if (a.prep && b.prepStep == null) {
-    const asks = ASK[a.prep.reason] || [];
-    return `<div class="prep-card"><h3>Saved to your appointment ✓</h3><p>${esc(prov(a.pid).name)} will see this before you arrive. It is not a diagnosis and it doesn't replace an examination.</p>
-      <div class="prep-sum">${prepSummary(a.prep).map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>
+function prepBlock(pid, saved, mode) {
+  const b = UI.b, who = esc(prov(pid).name);
+  if (b.prepStep == null && !saved) {
+    const btns = mode === 'pre'
+      ? `<div class="actions"><button class="btn ghost" data-act="prepskip">Skip for now</button><button class="btn" data-act="prepstart">Answer the questions</button></div>`
+      : `<button class="btn" data-act="prepstart">Answer the questions</button>`;
+    return `<div class="prep-card"><div class="label" style="margin-bottom:6px">Optional · about a minute</div><h3>Get more out of your first appointment</h3><p>Five quick questions. Your answers are saved with your appointment, so ${who} has them from the first minute. No need to send anything on WhatsApp.</p>${btns}</div>`;
+  }
+  if (saved && b.prepStep == null) {
+    const asks = ASK[saved.reason] || [];
+    return `<div class="prep-card"><h3>Saved to your appointment ✓</h3><p>${who} will see this before you arrive. It is not a diagnosis and it doesn't replace an examination.</p>
+      <div class="prep-sum">${prepSummary(saved).map(([k, v]) => `<div><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>
       ${asks.length ? `<div class="label" style="margin-top:14px">Questions worth asking</div><ul class="prep-ask">${asks.map((q) => `<li>${q}</li>`).join('')}</ul>` : ''}</div>`;
   }
   const q = PREP[b.prepStep], ans = b.prep || (b.prep = {});
@@ -562,9 +567,10 @@ function prepBlock(a) {
   const on = (v) => q.type === 'multi' ? (cur || []).includes(v) : cur === v;
   const ok = q.type === 'multi' ? (cur || []).length > 0 : !!cur;
   const last = b.prepStep === PREP.length - 1;
+  const lastLabel = mode === 'pre' ? (feeDue(b) ? 'Save and continue' : 'Save and book') : 'Save to my appointment';
   return `<div class="prep-card prep-q"><div class="label" style="margin-bottom:6px">Question ${b.prepStep + 1} of ${PREP.length}</div><p class="bk-q">${q.title}</p><p class="note">${q.hint}</p>
     <div class="opts">${q.options.map(([v, l, n]) => `<button class="opt" data-act="prepopt" data-v="${v}" aria-pressed="${on(v)}"><span style="min-width:0"><b>${l}</b>${n ? `<small>${n}</small>` : ''}</span>${q.type === 'multi' ? `<span class="tick">${ICONS.check}</span>` : ''}</button>`).join('')}</div>
-    <div class="actions">${b.prepStep > 0 ? '<button class="btn ghost" data-act="prepback">Back</button>' : '<span></span>'}<button class="btn" data-act="prepnext" ${ok ? '' : 'disabled'}>${last ? 'Save to my appointment' : 'Next'}</button></div></div>`;
+    <div class="actions"><button class="btn ghost" data-act="prepback">Back</button>${mode === 'pre' ? '<button class="fill" data-act="prepskip">Skip</button>' : ''}<button class="btn" data-act="prepnext" ${ok ? '' : 'disabled'}>${last ? lastLabel : 'Next'}</button></div></div>`;
 }
 function renderBooking() {
   const st = UI.step, b = UI.b, el = document.getElementById('v-booking');
@@ -597,6 +603,10 @@ function renderBooking() {
       return `<button class="date" data-act="day" data-t="${d.getTime()}" aria-pressed="${sameDay(d, b.day)}" ${n ? '' : 'disabled'}><small>${d.toLocaleDateString('en-GB', { weekday: 'short' })}</small><b class="tnum">${d.getDate()}</b><i>${d.toLocaleDateString('en-GB', { month: 'short' })}</i></button>`;
     }).join('') + `</div>` + (b.type === 'emerg' && b.day.getDay() === 0 ? `<p class="note" style="margin:-6px 0 12px">Sunday emergency appointments are at Trident Park and carry an extra fee.</p>` : '') + (slots.length ? groups.map(([g, f]) => { const ss = slots.filter((s) => f(s.m)); return ss.length ? `<div class="slot-group"><div class="label">${g}</div><div class="slots">` + ss.map((s) => `<button class="slot" data-act="slot" data-m="${s.m}" data-pid="${s.pid}" aria-pressed="${b.m === s.m}">${fmtTime(atMin(b.day, s.m))}</button>`).join('') + `</div></div>` : ''; }).join('') : `<div class="empty">No open times this day. Try another date.</div>`) +
       `<div class="actions"><span class="note">${b.m != null ? esc(prov(b.slotPid).name) + ' · ' + fmtDay(b.day) + ', ' + fmtTime(atMin(b.day, b.m)) : ''}</span><button class="btn" data-act="next" ${b.m == null ? 'disabled' : ''}>Continue</button></div>`;
+  } else if (st === 4 && b.prepMode) {
+    body = `<button class="back" data-act="prepexit">${ICONS.left} Back to your details</button>
+      <p class="note when-line">${typeById(b.type).name} · ${esc(prov(b.slotPid).name)} · ${clinicById(b.clinic).short} · <span class="tnum">${fmtDay(b.day)}, ${fmtTime(atMin(b.day, b.m))}</span></p>
+      ${prepBlock(b.slotPid, null, 'pre')}`;
   } else if (st === 4) {
     const d = b.d || (b.d = { kind: 'new', first: '', last: '', phone: '', email: '', lang: 'English', note: '', sms: true });
     body = `${back}<p class="bk-q">${titles[4]}</p>
@@ -636,7 +646,7 @@ function renderBooking() {
     body = `<div class="done"><span class="done-ic">${ICONS.check}</span><h2>You're booked, ${esc(d.first)}!</h2>
       <p class="note">${typeById(a.type).name} with ${esc(p.name)} · ${c.name}</p>
       <p class="done-when tnum">${fmtLong(when)} · ${fmtTime(when)}</p>${a.paid ? `<p class="note" style="margin-top:6px">€${FEE} booking fee paid · deducted from your final bill</p>` : ''}</div>
-      ${prepBlock(a)}
+      ${prepBlock(a.pid, a.prep, 'post')}
       <div class="sms" style="margin-top:16px"><div class="from">Text sent to ${esc(d.phone || 'the patient')}</div><div class="bubble">${sms}</div></div>
       <div class="actions"><button class="btn ghost" data-act="again">Book another</button><button class="btn" data-act="todesk">See it on the front desk ${ICONS.right}</button></div>`;
   }
@@ -659,12 +669,16 @@ function details() {
   readForm();
   const d = UI.b.d;
   if (!d.first || !d.last || !d.phone) { toast('Add first name, surname and mobile number to book.'); return; }
-  if (feeDue(UI.b)) { UI.step = 5; renderBooking(); } else book(false);
+  if (!UI.b.prepDone && !UI.b.prepSkipped) { UI.b.prepMode = true; UI.b.prepStep = null; renderBooking(); toTop(); return; }
+  afterPrep();
 }
+function afterPrep() { const b = UI.b; b.prepMode = false; b.prepStep = null; if (feeDue(b)) { UI.step = 5; renderBooking(); } else book(false); toTop(); }
+function toTop() { const c = document.querySelector('.bk'); if (c && c.getBoundingClientRect().top < 0) c.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
 function book(paid) {
   const b = UI.b, d = b.d;
   const start = atMin(b.day, b.m).getTime(), t = typeById(b.type);
-  const a = { id: 'a' + idc++, pid: b.slotPid, clinic: b.clinic, patient: d.first + ' ' + d.last, type: b.type, start, dur: t.dur, status: 'confirmed', source: 'online', isNew: d.kind === 'new', phone: d.phone, paid };
+  const a = { id: 'a' + idc++, pid: b.slotPid, clinic: b.clinic, patient: d.first + ' ' + d.last, type: b.type, start, dur: t.dur, status: 'confirmed', source: 'online', isNew: d.kind === 'new', phone: d.phone, paid, prep: b.prepDone ? b.prep : undefined };
+  b.prepStep = null;
   S.appts.push(a);
   S.feed.unshift({ id: 'f' + a.id, icon: 'cal', text: `<b>${esc(a.patient)}</b> booked <b>${t.name}</b> online at ${clinicById(a.clinic).short} for ${fmtDay(new Date(start))}, ${fmtTime(new Date(start))}${paid ? ' · €' + FEE + ' fee paid' : ''}`, at: Date.now(), fresh: true });
   b.bookedId = a.id; UI.desk.fresh = a.id; UI.desk.scrolled = false; UI.desk.day = new Date(b.day); UI.desk.tab = 'schedule'; UI.desk.clinic = b.clinic;
@@ -775,20 +789,22 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]'); if (!el) return;
   const act = el.dataset.act, b = UI.b;
   switch (act) {
-    case 'clinic': UI.b = { clinic: el.dataset.id }; UI.step = 1; renderBooking(); break;
+    case 'clinic': UI.b = { clinic: el.dataset.id, prep: {} }; UI.step = 1; renderBooking(); break;
     case 'type': b.type = el.dataset.id; b.pid = null; b.day = null; b.m = null; UI.step = 2; renderBooking(); break;
     case 'prov': b.pid = el.dataset.id || null; b.day = null; b.m = null; UI.step = 3; renderBooking(); break;
     case 'day': b.day = new Date(+el.dataset.t); b.m = null; renderBooking(); break;
     case 'slot': b.m = +el.dataset.m; b.slotPid = el.dataset.pid; renderBooking(); break;
     case 'next': if (b.m != null) { UI.step = 4; renderBooking(); } break;
-    case 'back': if (UI.step === 4) readForm(); UI.step = Math.max(0, UI.step - 1); renderBooking(); break;
+    case 'back': if (UI.step === 4) readForm(); UI.step = Math.max(0, UI.step - 1); if (UI.step === 4) b.prepMode = false; renderBooking(); break;
     case 'kind': readForm(); b.d.kind = el.dataset.k; renderBooking(); break;
     case 'sample': { const f = pick(FIRST), l = pick(LAST); Object.assign(b.d, { first: f, last: l, phone: '79' + (20 + Math.floor(rnd() * 79)) + ' ' + (1000 + Math.floor(rnd() * 8999)), email: (f + '.' + l).toLowerCase() + '@example.com' }); renderBooking(); break; }
     case 'confirm': details(); break;
     case 'prepstart': b.prepStep = 0; b.prep = {}; renderBooking(); toPrep(); break;
     case 'prepopt': { const q = PREP[b.prepStep], v = el.dataset.v; if (q.type === 'multi') { let arr = (b.prep[q.key] || []).slice(); if (v === 'none') arr = arr.includes('none') ? [] : ['none']; else { arr = arr.filter((x) => x !== 'none'); arr = arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]; } b.prep[q.key] = arr; } else b.prep[q.key] = v; renderBooking(); break; }
-    case 'prepback': b.prepStep = Math.max(0, b.prepStep - 1); renderBooking(); toPrep(); break;
-    case 'prepnext': if (b.prepStep < PREP.length - 1) { b.prepStep++; renderBooking(); toPrep(); } else { const a = S.appts.find((x) => x.id === b.bookedId); a.prep = b.prep; b.prepStep = null; S.feed.unshift({ id: 'fp' + a.id, icon: 'clip', text: `<b>${esc(a.patient)}</b> answered the pre-visit questions for their appointment`, at: Date.now(), fresh: true }); renderBooking(); toast('Saved to the appointment'); } break;
+    case 'prepback': b.prepStep = b.prepStep > 0 ? b.prepStep - 1 : null; renderBooking(); toPrep(); break;
+    case 'prepskip': b.prepSkipped = true; b.prep = {}; afterPrep(); break;
+    case 'prepexit': b.prepMode = false; b.prepStep = null; renderBooking(); break;
+    case 'prepnext': if (b.prepStep < PREP.length - 1) { b.prepStep++; renderBooking(); toPrep(); } else if (UI.step === 4) { b.prepDone = true; afterPrep(); } else { const a = S.appts.find((x) => x.id === b.bookedId); a.prep = b.prep; b.prepStep = null; S.feed.unshift({ id: 'fp' + a.id, icon: 'clip', text: `<b>${esc(a.patient)}</b> answered the pre-visit questions for their appointment`, at: Date.now(), fresh: true }); renderBooking(); toast('Saved to the appointment'); } break;
     case 'pay': book(true); toast('€' + FEE + ' booking fee paid (demo)'); break;
     case 'again': UI.b = {}; UI.step = 0; renderBooking(); break;
     case 'todesk': location.hash = 'front-desk'; break;
